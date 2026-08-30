@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>On Air — Voice Web Briefing</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* Design Tokens */
+    :root {
+      --bg: #F7F2EA;
+      --surface: #FFFFFF;
+      --surface-raised: #F0E9DD;
+      --text: #2B2420;
+      --muted: #8C8275;
+      --accent: #D97757;
+      --accent-deep: #BF5B3E;
+      --accent-tint: rgba(217, 119, 87, 0.08);
+      --accent-tint-strong: rgba(217, 119, 87, 0.18);
+      --border: rgba(43, 36, 32, 0.08);
+      --border-strong: rgba(43, 36, 32, 0.16);
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --shadow-subtle: 0 4px 20px rgba(43, 36, 32, 0.04);
+      --font-display: 'Source Serif 4', Georgia, serif;
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    /* Base Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* SVG Grain Overlay */
+    .grain-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.035;
+    }
+
+    /* Layout Containers */
+    .app-header {
+      width: 100%;
+      max-width: 900px;
+      padding: 32px 24px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--surface);
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      box-shadow: var(--shadow-subtle);
+      transition: all 0.25s ease;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background-color 0.25s ease;
+    }
+
+    .status-pill.is-live .status-dot {
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.25);
+      animation: pulse-dot 1.8s infinite ease-in-out;
+    }
+
+    .status-pill.is-error .status-dot {
+      background: #C94A29;
+    }
+
+    .status-pill.is-loading .status-dot {
+      background: var(--accent);
+      animation: blink-dot 1s infinite alternate;
+    }
+
+    @keyframes pulse-dot {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 119, 87, 0.5); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(217, 119, 87, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 119, 87, 0); }
+    }
+
+    @keyframes blink-dot {
+      from { opacity: 0.3; }
+      to { opacity: 1; }
+    }
+
+    .main-content {
+      width: 100%;
+      max-width: 900px;
+      padding: 16px 24px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* Console Card */
+    .console-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .console-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .console-headline {
+      font-family: var(--font-display);
+      font-size: 32px;
+      line-height: 1.25;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    /* Form Elements */
+    .input-form {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .url-input {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      padding: 14px 18px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .url-input::placeholder {
+      color: var(--muted);
+    }
+
+    .url-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-tint);
+    }
+
+    .btn-primary {
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 14px 28px;
+      background: var(--accent);
+      color: #FFFFFF;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-deep);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .btn-primary:focus-visible {
+      outline: 2px solid var(--accent-deep);
+      outline-offset: 2px;
+    }
+
+    .form-hint {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* Error Panel */
+    .error-panel {
+      display: none;
+      background: var(--accent-tint);
+      border: 1px solid var(--accent-tint-strong);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      color: var(--text);
+    }
+
+    .error-panel.is-visible {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .error-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-deep);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .error-message {
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    /* Waveform & Player Console */
+    .player-card {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .player-card.is-visible {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .waveform-container {
+      width: 100%;
+      height: 120px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      position: relative;
+    }
+
+    canvas#waveformCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .player-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .play-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      color: #FFFFFF;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      flex-shrink: 0;
+    }
+
+    .play-btn:hover {
+      background: var(--accent-deep);
+    }
+
+    .play-btn:active {
+      transform: scale(0.95);
+    }
+
+    .play-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .play-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .progress-bar-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .progress-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--surface-raised);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .progress-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .progress-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .time-display {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--muted);
+      align-self: flex-end;
+    }
+
+    /* Transcript Card */
+    .transcript-card {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .transcript-card.is-visible {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .transcript-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .transcript-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .btn-secondary {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .transcript-body {
+      font-family: var(--font-display);
+      font-size: 18px;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .app-header {
+        padding: 20px 16px 8px;
+      }
+
+      .main-content {
+        padding: 12px 16px 40px;
+      }
+
+      .console-card {
+        padding: 24px 20px;
+      }
+
+      .console-headline {
+        font-size: 24px;
+      }
+
+      .input-form {
+        flex-direction: column;
+      }
+
+      .btn-primary {
+        width: 100%;
+      }
+
+      .player-card, .transcript-card {
+        padding: 24px 20px;
+      }
+
+      .transcript-body {
+        font-size: 16px;
+      }
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Inlined Paper Noise Filter -->
+  <svg class="grain-overlay" xmlns="http://www.w3.org/2000/svg">
+    <filter id="noiseFilter">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <rect width="100%" height="100%" filter="url(#noiseFilter)"/>
+  </svg>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand-group">
+      <div class="brand-icon">📻</div>
+      <h1 class="brand-title">On Air</h1>
+    </div>
+
+    <div id="statusPill" class="status-pill">
+      <span class="status-dot"></span>
+      <span id="statusText">Ready</span>
+    </div>
+  </header>
+
+  <!-- Main Console -->
+  <main class="main-content">
+
+    <!-- URL Input Console Card -->
+    <section class="console-card">
+      <div class="console-eyebrow">Voice Web Briefing</div>
+      <h2 class="console-headline">Paste a link. Hear it back as a broadcast.</h2>
+
+      <form id="briefingForm" class="input-form" onsubmit="handleFormSubmit(event)">
+        <input 
+          type="text" 
+          id="urlInput" 
+          class="url-input" 
+          placeholder="https://en.wikipedia.org/wiki/Artificial_intelligence" 
+          required 
+          autocomplete="off"
+          autofocus
+        />
+        <button type="submit" id="submitBtn" class="btn-primary">
+          <span>Go live</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+      </form>
+      <p class="form-hint">Context.dev scrapes the page • Groq writes the script • Fish Audio voices the broadcast</p>
+    </section>
+
+    <!-- Error State Panel -->
+    <div id="errorPanel" class="error-panel" role="alert">
+      <div class="error-title">Signal lost</div>
+      <div id="errorMessage" class="error-message">Couldn't put this page on air. Try another URL.</div>
+    </div>
+
+    <!-- Audio Player & Waveform Console -->
+    <section id="playerCard" class="player-card">
+      <div class="waveform-container">
+        <canvas id="waveformCanvas"></canvas>
+      </div>
+
+      <div class="player-controls">
+        <button id="playPauseBtn" class="play-btn" aria-label="Play audio" onclick="togglePlayPause()">
+          <svg id="playIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <svg id="pauseIcon" viewBox="0 0 24 24" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+        </button>
+
+        <div class="progress-bar-wrapper">
+          <input type="range" id="progressSlider" class="progress-slider" min="0" max="100" value="0" step="0.1" oninput="handleSeek(this.value)">
+          <div id="timeDisplay" class="time-display">0:00 / 0:00</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Transcript Console -->
+    <section id="transcriptCard" class="transcript-card">
+      <div class="transcript-header">
+        <span class="transcript-title">Broadcast Transcript</span>
+        <button class="btn-secondary" onclick="copyTranscript()">Copy script</button>
+      </div>
+      <div id="transcriptBody" class="transcript-body"></div>
+    </section>
+
+  </main>
+
+  <!-- Audio Element -->
+  <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+  <script>
+    // State management
+    let isProcessing = false;
+    let loadingInterval = null;
+    let audioCtx = null;
+    let analyserNode = null;
+    let sourceNode = null;
+    let animFrameId = null;
+
+    const pipelineStages = [
+      "Reading the page…",
+      "Writing the script…",
+      "Recording the voice…"
+    ];
+
+    // DOM References
+    const statusPill = document.getElementById("statusPill");
+    const statusText = document.getElementById("statusText");
+    const urlInput = document.getElementById("urlInput");
+    const submitBtn = document.getElementById("submitBtn");
+    const errorPanel = document.getElementById("errorPanel");
+    const errorMessage = document.getElementById("errorMessage");
+    const playerCard = document.getElementById("playerCard");
+    const transcriptCard = document.getElementById("transcriptCard");
+    const transcriptBody = document.getElementById("transcriptBody");
+    const audioPlayer = document.getElementById("audioPlayer");
+    const playPauseBtn = document.getElementById("playPauseBtn");
+    const playIcon = document.getElementById("playIcon");
+    const pauseIcon = document.getElementById("pauseIcon");
+    const progressSlider = document.getElementById("progressSlider");
+    const timeDisplay = document.getElementById("timeDisplay");
+    const canvas = document.getElementById("waveformCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Initialize Canvas sizing
+    function resizeCanvas() {
+      if (canvas.parentElement) {
+        canvas.width = canvas.parentElement.clientWidth * window.devicePixelRatio;
+        canvas.height = canvas.parentElement.clientHeight * window.devicePixelRatio;
+      }
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    // Clipboard pre-fill stretch check
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const clipText = await navigator.clipboard.readText();
+          if (clipText && (clipText.startsWith("http://") || clipText.startsWith("https://")) && !urlInput.value) {
+            urlInput.value = clipText;
+          }
+        }
+      } catch(e) {}
+    });
+
+    // Handle Form Submit
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const url = urlInput.value.trim();
+      if (!url || isProcessing) return;
+
+      setLoadingState(true);
+      hideError();
+      hidePlayerAndTranscript();
+
+      try {
+        const response = await fetch("/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || `Server returned status ${response.status}`);
+        }
+
+        // Handle Success
+        stopLoadingCycle();
+        setStatus("is-live", "On air");
+        renderTranscript(data.script);
+        setupAudio(data.audio_url);
+
+      } catch (err) {
+        stopLoadingCycle();
+        setStatus("is-error", "Signal lost");
+        showError(`Couldn't put this page on air — ${err.message}. Try another URL.`);
+      } finally {
+        setLoadingState(false);
+      }
+    }
+
+    // Status Pill Management
+    function setStatus(stateClass, text) {
+      statusPill.className = "status-pill " + stateClass;
+      statusText.textContent = text;
+    }
+
+    function startLoadingCycle() {
+      let stageIndex = 0;
+      setStatus("is-loading", pipelineStages[0]);
+
+      loadingInterval = setInterval(() => {
+        stageIndex = (stageIndex + 1) % pipelineStages.length;
+        setStatus("is-loading", pipelineStages[stageIndex]);
+      }, 2400);
+    }
+
+    function stopLoadingCycle() {
+      if (loadingInterval) {
+        clearInterval(loadingInterval);
+        loadingInterval = null;
+      }
+    }
+
+    function setLoadingState(loading) {
+      isProcessing = loading;
+      submitBtn.disabled = loading;
+      urlInput.disabled = loading;
+
+      if (loading) {
+        startLoadingCycle();
+      } else {
+        stopLoadingCycle();
+      }
+    }
+
+    // Error UI
+    function showError(msg) {
+      errorMessage.textContent = msg;
+      errorPanel.classList.add("is-visible");
+    }
+
+    function hideError() {
+      errorPanel.classList.remove("is-visible");
+    }
+
+    function hidePlayerAndTranscript() {
+      playerCard.classList.remove("is-visible");
+      transcriptCard.classList.remove("is-visible");
+    }
+
+    // Transcript UI
+    function renderTranscript(text) {
+      transcriptBody.textContent = text;
+      transcriptCard.classList.add("is-visible");
+    }
+
+    function copyTranscript() {
+      if (transcriptBody.textContent) {
+        navigator.clipboard.writeText(transcriptBody.textContent);
+        const btn = event.target;
+        const orig = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(() => btn.textContent = orig, 2000);
+      }
+    }
+
+    // Audio Player & Web Audio API Visualizer Setup
+    function setupAudio(audioUrl) {
+      audioPlayer.src = audioUrl;
+      playerCard.classList.add("is-visible");
+      resizeCanvas();
+
+      // Lazy load AudioContext on user action
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+        analyserNode = audioCtx.createAnalyser();
+        analyserNode.fftSize = 128;
+
+        try {
+          sourceNode = audioCtx.createMediaElementSource(audioPlayer);
+          sourceNode.connect(analyserNode);
+          analyserNode.connect(audioCtx.destination);
+        } catch (e) {
+          console.log("Web Audio node connection fallback", e);
+        }
+      }
+
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+
+      // Auto play audio
+      audioPlayer.play().then(() => {
+        updatePlayPauseUI(true);
+        startVisualizer();
+      }).catch(err => {
+        console.warn("Autoplay blocked by browser policy:", err);
+        updatePlayPauseUI(false);
+        startVisualizer();
+      });
+    }
+
+    // Audio Transport Controls
+    function togglePlayPause() {
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+
+      if (audioPlayer.paused) {
+        audioPlayer.play();
+        updatePlayPauseUI(true);
+        startVisualizer();
+      } else {
+        audioPlayer.pause();
+        updatePlayPauseUI(false);
+      }
+    }
+
+    function updatePlayPauseUI(isPlaying) {
+      if (isPlaying) {
+        playIcon.style.display = "none";
+        pauseIcon.style.display = "block";
+        setStatus("is-live", "On air");
+      } else {
+        playIcon.style.display = "block";
+        pauseIcon.style.display = "none";
+      }
+    }
+
+    audioPlayer.addEventListener("timeupdate", () => {
+      if (audioPlayer.duration) {
+        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        progressSlider.value = progress;
+        timeDisplay.textContent = `${formatTime(audioPlayer.currentTime)} / ${formatTime(audioPlayer.duration)}`;
+      }
+    });
+
+    audioPlayer.addEventListener("ended", () => {
+      updatePlayPauseUI(false);
+      progressSlider.value = 0;
+    });
+
+    function handleSeek(percent) {
+      if (audioPlayer.duration) {
+        audioPlayer.currentTime = (percent / 100) * audioPlayer.duration;
+      }
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    }
+
+    // Web Audio Canvas Visualizer
+    function startVisualizer() {
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+
+      const bufferLength = analyserNode ? analyserNode.frequencyBinCount : 32;
+      const dataArray = new Uint8Array(bufferLength);
+
+      function draw() {
+        animFrameId = requestAnimationFrame(draw);
+
+        if (analyserNode && !audioPlayer.paused) {
+          analyserNode.getByteFrequencyData(dataArray);
+        } else {
+          // Flatten data array smoothly when paused
+          for (let i = 0; i < dataArray.length; i++) {
+            dataArray[i] = Math.max(0, dataArray[i] - 4);
+          }
+        }
+
+        const width = canvas.width;
+        const height = canvas.height;
+
+        ctx.clearRect(0, 0, width, height);
+
+        const barCount = 48;
+        const gap = 4 * window.devicePixelRatio;
+        const barWidth = (width - (barCount - 1) * gap) / barCount;
+        const centerY = height / 2;
+
+        for (let i = 0; i < barCount; i++) {
+          const sampleIndex = Math.floor((i / barCount) * (bufferLength / 1.5));
+          const val = dataArray[sampleIndex] || 0;
+          const amplitude = (val / 255);
+          
+          // Height calculation with minimum resting bar height
+          let barHeight = amplitude * (height * 0.75);
+          if (barHeight < 4 * window.devicePixelRatio) {
+            barHeight = 4 * window.devicePixelRatio;
+          }
+
+          const x = i * (barWidth + gap);
+          const y = centerY - (barHeight / 2);
+
+          // Render in Accent Color (#D97757) with rounded caps
+          ctx.fillStyle = "#D97757";
+          ctx.beginPath();
+          ctx.roundRect(x, y, barWidth, barHeight, 3 * window.devicePixelRatio);
+          ctx.fill();
+        }
+      }
+
+      draw();
+    }
+  </script>
+</body>
+</html>
