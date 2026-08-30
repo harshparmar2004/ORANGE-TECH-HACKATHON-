@@ -3,10 +3,13 @@ import time
 import requests
 import math
 import struct
+import base64
+import tempfile
 from flask import Flask, request, jsonify, send_from_directory
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
@@ -267,27 +270,25 @@ def generate():
         if not fish_resp or fish_resp.status_code != 200:
             return jsonify({"detail": f"Fish Audio TTS error: {fish_err_msg}"}), 502
 
+        # Convert audio bytes directly to Base64 Data URL (100% stateless, works on read-only filesystems like /var/task)
+        audio_b64 = base64.b64encode(fish_resp.content).decode("utf-8")
+        audio_data_url = f"data:audio/mp3;base64,{audio_b64}"
 
-        # Save audio file
-        output_filename = f"output_{int(time.time())}.mp3"
-        output_path = os.path.join(STATIC_DIR, output_filename)
-        with open(output_path, "wb") as f:
-            f.write(fish_resp.content)
-
-        # Also overwrite static/output.mp3 for backward compatibility
-        default_path = os.path.join(STATIC_DIR, "output.mp3")
-        with open(default_path, "wb") as f:
-            f.write(fish_resp.content)
-
-        timestamp = int(time.time())
-        audio_url = f"/static/{output_filename}?t={timestamp}"
+        # Attempt to save to /tmp or static folder if writable, ignore filesystem errors
+        try:
+            tmp_dir = tempfile.gettempdir()
+            tmp_path = os.path.join(tmp_dir, "output.mp3")
+            with open(tmp_path, "wb") as f:
+                f.write(fish_resp.content)
+        except Exception:
+            pass
 
         res_payload = {
             "title": page_title,
             "url": url,
             "persona": persona,
             "script": script,
-            "audio_url": audio_url
+            "audio_url": audio_data_url
         }
 
         RECENT_BROADCASTS.insert(0, res_payload)
@@ -297,6 +298,7 @@ def generate():
         return jsonify(res_payload), 200
     except Exception as exc:
         return jsonify({"detail": f"Server processing error: {str(exc)}"}), 500
+
 
     except Exception as exc:
         return jsonify({"detail": f"Server processing error: {str(exc)}"}), 500
