@@ -34,6 +34,24 @@
       --font-mono: 'IBM Plex Mono', monospace;
     }
 
+    /* Studio Midnight Dark Mode Theme */
+    body[data-theme="dark"] {
+      --bg: #141210;
+      --surface: #1E1A17;
+      --surface-raised: #2A2420;
+      --text: #F7F2EA;
+      --muted: #A3998C;
+      --accent: #E08567;
+      --accent-deep: #F09A7D;
+      --accent-tint: rgba(224, 133, 103, 0.12);
+      --accent-tint-strong: rgba(224, 133, 103, 0.25);
+      --border: rgba(247, 242, 234, 0.1);
+      --border-strong: rgba(247, 242, 234, 0.2);
+      --shadow-subtle: 0 4px 24px rgba(0, 0, 0, 0.3);
+      --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+
     /* Base Reset */
     *, *::before, *::after {
       box-sizing: border-box;
@@ -135,11 +153,54 @@
       letter-spacing: 0.05em;
     }
 
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    /* Header Controls */
+    .theme-toggle-btn, .mobile-toggle-btn {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 12px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
+
+    .mobile-toggle-btn {
+      display: none;
+      font-size: 16px;
+      padding: 4px 10px;
+    }
+
+    .theme-toggle-btn:hover {
+      background: var(--accent-tint);
+      border-color: var(--accent);
+      color: var(--accent-deep);
+    }
+
+    .transcript-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .script-analytics {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .analytics-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 2px 8px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+    }
+
 
     .status-pill {
       display: inline-flex;
@@ -1068,6 +1129,7 @@
     <!-- Top Navbar -->
     <header class="top-navbar">
       <div class="nav-brand">
+        <button id="mobileMenuBtn" class="mobile-toggle-btn" onclick="toggleMobileSidebar()" aria-label="Toggle drawer">☰</button>
         <div class="nav-logo">📻</div>
         <div class="nav-title-group">
           <span class="nav-title">On Air</span>
@@ -1076,12 +1138,14 @@
       </div>
 
       <div class="nav-actions">
+        <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleStudioTheme()">🌙 Dark Mode</button>
         <div id="statusPill" class="status-pill">
           <span class="status-dot"></span>
           <span id="statusText">Ready</span>
         </div>
       </div>
     </header>
+
 
     <!-- Main Workspace Layout (Left Sidebar + Right Studio Window) -->
     <div class="workspace-body">
@@ -1254,7 +1318,16 @@
         <!-- Transcript Console -->
         <section id="transcriptCard" class="transcript-card">
           <div class="transcript-header">
-            <span class="transcript-title">Broadcast Transcript</span>
+            <div class="transcript-title-group">
+              <span class="transcript-title">Broadcast Transcript</span>
+              <!-- Script Analytics Bar -->
+              <div class="script-analytics">
+                <span id="statWordCount" class="analytics-pill">💬 0 words</span>
+                <span id="statReadTime" class="analytics-pill">⏱️ 0s listen</span>
+                <span id="statPacing" class="analytics-pill">🎙️ Spoken Radio Prose</span>
+              </div>
+            </div>
+
             <div class="transcript-actions">
               <button class="btn-secondary" onclick="downloadTranscriptTxt()">Download .txt</button>
               <button class="btn-secondary" onclick="copyTranscript()">Copy script</button>
@@ -1262,6 +1335,7 @@
           </div>
           <div id="transcriptBody" class="transcript-body"></div>
         </section>
+
 
 
 
@@ -1636,7 +1710,26 @@
       link.click();
     }
 
-    // Transcript UI with Sentence Karaoke Nodes
+    // Studio Theme Toggle (Light / Dark Mode)
+    function toggleStudioTheme() {
+      const isDark = document.body.getAttribute("data-theme") === "dark";
+      const btn = document.getElementById("themeToggleBtn");
+      if (isDark) {
+        document.body.removeAttribute("data-theme");
+        if (btn) btn.textContent = "🌙 Dark Mode";
+      } else {
+        document.body.setAttribute("data-theme", "dark");
+        if (btn) btn.textContent = "☀️ Light Mode";
+      }
+    }
+
+    // Mobile Sidebar Drawer Toggle
+    function toggleMobileSidebar() {
+      const sidebar = document.querySelector(".sidebar");
+      if (sidebar) sidebar.classList.toggle("active");
+    }
+
+    // Transcript UI with Sentence Karaoke Nodes & Analytics Bar
     let currentSentences = [];
 
     function renderTranscript(text) {
@@ -1651,8 +1744,21 @@
         transcriptBody.appendChild(span);
       });
 
+      // Calculate script analytics metrics
+      const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+      const readSec = Math.round((words / 150) * 60); // 150 words per min spoken pace
+      
+      const statWordCount = document.getElementById("statWordCount");
+      const statReadTime = document.getElementById("statReadTime");
+      const statPacing = document.getElementById("statPacing");
+
+      if (statWordCount) statWordCount.textContent = `💬 ${words} words`;
+      if (statReadTime) statReadTime.textContent = `⏱️ ~${readSec}s listen`;
+      if (statPacing) statPacing.textContent = `🎙️ ${selectedPersona.toUpperCase()} • Spoken Radio`;
+
       transcriptCard.classList.add("is-visible");
     }
+
 
     function copyTranscript() {
       const text = transcriptBody.innerText || transcriptBody.textContent;
