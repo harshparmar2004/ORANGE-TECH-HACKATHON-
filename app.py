@@ -66,11 +66,20 @@ def serve_static(path):
     return send_from_directory(STATIC_DIR, path)
 
 
+# In-memory store for recent broadcasts (last 5 items)
+RECENT_BROADCASTS = []
+
+@app.route("/history", methods=["GET"])
+def get_history():
+    return jsonify(RECENT_BROADCASTS), 200
+
+
 @app.route("/generate", methods=["POST"])
 def generate():
     try:
         data = request.get_json(silent=True) or {}
         url = data.get("url", "").strip()
+        persona = data.get("persona", "standard").strip().lower()
 
         if not url:
             return jsonify({"detail": "URL is required."}), 400
@@ -106,10 +115,17 @@ def generate():
                     f.write(audio_bytes)
 
                 timestamp = int(time.time())
-                return jsonify({
+                res_payload = {
+                    "title": "On Air Broadcast Demo",
+                    "url": url,
+                    "persona": persona,
                     "script": demo_script,
                     "audio_url": f"/static/output.mp3?t={timestamp}"
-                }), 200
+                }
+                RECENT_BROADCASTS.insert(0, res_payload)
+                if len(RECENT_BROADCASTS) > 5:
+                    RECENT_BROADCASTS.pop()
+                return jsonify(res_payload), 200
             else:
                 return jsonify({
                     "detail": "API credentials (CONTEXT_DEV_API_KEY, GROQ_API_KEY, FISH_API_KEY) are missing or set to defaults on the server. Please configure valid environment variables in your Render deployment."
@@ -146,19 +162,47 @@ def generate():
         if not markdown_content:
             return jsonify({"detail": "Context.dev error: No content could be extracted from this URL."}), 502
 
+        # Extract title from metadata if available
+        page_title = ctx_json.get("metadata", {}).get("title") or url.split("//")[-1].split("/")[0]
+
         # Truncate markdown to ~8000 chars for LLM safety
         truncated_md = markdown_content[:8000]
 
+        # Persona style prompts
+        persona_instructions = {
+            "upbeat": (
+                "Persona: Tech Pulse Anchor (Upbeat & Energetic).\n"
+                "Use occasional emotion cues like [excited] or [energetic] at key transitions. "
+                "Keep sentences fast-paced, enthusiastic, and highly engaging for a modern tech audience."
+            ),
+            "calm": (
+                "Persona: Deep Dive Analyst (Calm & Thoughtful).\n"
+                "Use occasional emotion cues like [calm] or [soft]. "
+                "Write in a slow, clear, reflective, and deeply analytical commentary style."
+            ),
+            "vintage": (
+                "Persona: 1940s Vintage Radio Newsreel.\n"
+                "Start with 'Good evening listeners, breaking news from the wire!' "
+                "Use dramatic vintage broadcasting vocabulary and classic mid-century newsreel phrasing."
+            ),
+            "standard": (
+                "Persona: Standard Radio News Anchor.\n"
+                "Deliver a crisp, professional, balanced, and authoritative news briefing."
+            )
+        }
+
+        selected_persona_prompt = persona_instructions.get(persona, persona_instructions["standard"])
+
         # Stage 2: Groq LLM Condensation
         prompt = (
-            "You are a professional radio broadcaster producing an engaging 60 to 90 second voice briefing for a podcast listener.\n"
-            "Transform the following web page content into a warm, clear, conversational spoken-style script.\n"
+            f"{selected_persona_prompt}\n"
+            "Transform the following web page content into a 60 to 90 second spoken broadcast script.\n"
             "STRICT CONSTRAINTS:\n"
-            "- Do NOT use any markdown formatting (no asterisks, no bullet points, no bold, no headers, no hashtags).\n"
-            "- Write plain conversational prose in natural spoken English.\n"
+            "- Do NOT use markdown syntax (no asterisks, no headers, no bullet points).\n"
+            "- Write natural spoken sentences only.\n"
             "- Start with a compelling broadcast opening statement.\n"
-            "- Cover the key insights in 3 to 5 smooth sentences.\n"
-            "- Conclude with a clean broadcast sign-off.\n\n"
+            "- Cover 3 to 5 core insights smoothly.\n"
+            "- Conclude with a clean sign-off.\n\n"
             f"Web Page Content:\n{truncated_md}"
         )
 
@@ -231,15 +275,35 @@ def generate():
             return jsonify({"detail": f"Fish Audio TTS error: {fish_err_msg}"}), 502
 
         # Save audio file
-        output_path = os.path.join(STATIC_DIR, "output.mp3")
+        output_filename = f"output_{int(time.time())}.mp3"
+        output_path = os.path.join(STATIC_DIR, output_filename)
         with open(output_path, "wb") as f:
             f.write(fish_resp.content)
 
+        # Also overwrite static/output.mp3 for backward compatibility
+        default_path = os.path.join(STATIC_DIR, "output.mp3")
+        with open(default_path, "wb") as f:
+            f.write(fish_resp.content)
+
         timestamp = int(time.time())
-        return jsonify({
+        audio_url = f"/static/{output_filename}?t={timestamp}"
+
+        res_payload = {
+            "title": page_title,
+            "url": url,
+            "persona": persona,
             "script": script,
-            "audio_url": f"/static/output.mp3?t={timestamp}"
-        }), 200
+            "audio_url": audio_url
+        }
+
+        RECENT_BROADCASTS.insert(0, res_payload)
+        if len(RECENT_BROADCASTS) > 5:
+            RECENT_BROADCASTS.pop()
+
+        return jsonify(res_payload), 200
+    except Exception as exc:
+        return jsonify({"detail": f"Server processing error: {str(exc)}"}), 500
+
     except Exception as exc:
         return jsonify({"detail": f"Server processing error: {str(exc)}"}), 500
 

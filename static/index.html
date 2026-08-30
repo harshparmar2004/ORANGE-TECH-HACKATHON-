@@ -456,12 +456,212 @@
       background: var(--border);
     }
 
-    .transcript-body {
-      font-family: var(--font-display);
-      font-size: 18px;
-      line-height: 1.7;
+    /* Persona Selector */
+    .persona-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .persona-label {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .persona-btn {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 14px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       color: var(--text);
-      white-space: pre-wrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .persona-btn:hover {
+      background: var(--border);
+    }
+
+    .persona-btn.active {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Waveform Header & Controls */
+    .waveform-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .player-meta {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .viz-toggle {
+      display: flex;
+      gap: 4px;
+      background: var(--surface-raised);
+      padding: 3px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .viz-btn {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .viz-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .speed-selector {
+      display: flex;
+      gap: 4px;
+    }
+
+    .speed-btn {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 4px 8px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .speed-btn:hover {
+      color: var(--text);
+    }
+
+    .speed-btn.active {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .btn-download {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 4px 12px;
+      border: 1px solid var(--accent-tint-strong);
+      border-radius: var(--radius-sm);
+      background: var(--accent-tint);
+      transition: all 0.2s ease;
+    }
+
+    .btn-download:hover {
+      background: var(--accent);
+      color: #FFFFFF;
+    }
+
+    /* Recent Broadcast Tapes Reel */
+    .recent-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .recent-header {
+      margin-bottom: 16px;
+    }
+
+    .recent-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tape-chip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tape-chip:hover {
+      border-color: var(--accent);
+      transform: translateX(4px);
+    }
+
+    .tape-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .tape-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .tape-sub {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .tape-play-icon {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 14px;
     }
 
     /* Animations */
@@ -469,6 +669,7 @@
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
 
     /* Responsive */
     @media (max-width: 640px) {
@@ -547,6 +748,15 @@
       <div class="console-eyebrow">Voice Web Briefing</div>
       <h2 class="console-headline">Paste a link. Hear it back as a broadcast.</h2>
 
+      <!-- Persona Dial Selector -->
+      <div class="persona-selector">
+        <span class="persona-label">Select Persona:</span>
+        <button type="button" class="persona-btn active" data-persona="standard" onclick="selectPersona('standard', this)">🎙️ Anchor</button>
+        <button type="button" class="persona-btn" data-persona="upbeat" onclick="selectPersona('upbeat', this)">⚡ Tech Pulse</button>
+        <button type="button" class="persona-btn" data-persona="calm" onclick="selectPersona('calm', this)">🧘 Deep Dive</button>
+        <button type="button" class="persona-btn" data-persona="vintage" onclick="selectPersona('vintage', this)">📻 Vintage Radio</button>
+      </div>
+
       <form id="briefingForm" class="input-form" onsubmit="handleFormSubmit(event)">
         <input 
           type="text" 
@@ -573,6 +783,14 @@
 
     <!-- Audio Player & Waveform Console -->
     <section id="playerCard" class="player-card">
+      <div class="waveform-header">
+        <span id="playerMeta" class="player-meta">LIVE BROADCAST</span>
+        <div class="viz-toggle">
+          <button class="viz-btn active" id="vizBarsBtn" onclick="setVizStyle('bars')">Bars</button>
+          <button class="viz-btn" id="vizWaveBtn" onclick="setVizStyle('wave')">Wave</button>
+        </div>
+      </div>
+
       <div class="waveform-container">
         <canvas id="waveformCanvas"></canvas>
       </div>
@@ -585,7 +803,16 @@
 
         <div class="progress-bar-wrapper">
           <input type="range" id="progressSlider" class="progress-slider" min="0" max="100" value="0" step="0.1" oninput="handleSeek(this.value)">
-          <div id="timeDisplay" class="time-display">0:00 / 0:00</div>
+          <div class="control-row">
+            <div class="speed-selector">
+              <button class="speed-btn active" onclick="setPlaybackSpeed(1.0, this)">1x</button>
+              <button class="speed-btn" onclick="setPlaybackSpeed(1.25, this)">1.25x</button>
+              <button class="speed-btn" onclick="setPlaybackSpeed(1.5, this)">1.5x</button>
+              <button class="speed-btn" onclick="setPlaybackSpeed(2.0, this)">2x</button>
+            </div>
+            <a id="downloadBtn" class="btn-download" download="on_air_briefing.mp3" target="_blank">Download MP3</a>
+            <div id="timeDisplay" class="time-display">0:00 / 0:00</div>
+          </div>
         </div>
       </div>
     </section>
@@ -598,6 +825,15 @@
       </div>
       <div id="transcriptBody" class="transcript-body"></div>
     </section>
+
+    <!-- Recent Broadcast Tapes Reel -->
+    <section id="recentCard" class="recent-card" style="display:none;">
+      <div class="recent-header">
+        <span class="recent-title">📼 Recent Broadcast Tapes</span>
+      </div>
+      <div id="recentList" class="recent-list"></div>
+    </section>
+
 
   </main>
 
@@ -612,6 +848,9 @@
     let analyserNode = null;
     let sourceNode = null;
     let animFrameId = null;
+    let selectedPersona = "standard";
+    let vizStyle = "bars"; // 'bars' or 'wave'
+    let recentBroadcasts = [];
 
     const pipelineStages = [
       "Reading the page…",
@@ -627,8 +866,12 @@
     const errorPanel = document.getElementById("errorPanel");
     const errorMessage = document.getElementById("errorMessage");
     const playerCard = document.getElementById("playerCard");
+    const playerMeta = document.getElementById("playerMeta");
+    const downloadBtn = document.getElementById("downloadBtn");
     const transcriptCard = document.getElementById("transcriptCard");
     const transcriptBody = document.getElementById("transcriptBody");
+    const recentCard = document.getElementById("recentCard");
+    const recentList = document.getElementById("recentList");
     const audioPlayer = document.getElementById("audioPlayer");
     const playPauseBtn = document.getElementById("playPauseBtn");
     const playIcon = document.getElementById("playIcon");
@@ -648,7 +891,28 @@
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    // Clipboard pre-fill stretch check
+    // Persona Selection
+    function selectPersona(persona, el) {
+      selectedPersona = persona;
+      document.querySelectorAll(".persona-btn").forEach(btn => btn.classList.remove("active"));
+      el.classList.add("active");
+    }
+
+    // Playback Speed Adjustment
+    function setPlaybackSpeed(speed, el) {
+      audioPlayer.playbackRate = speed;
+      document.querySelectorAll(".speed-btn").forEach(btn => btn.classList.remove("active"));
+      el.classList.add("active");
+    }
+
+    // Visualizer Style Switch
+    function setVizStyle(style) {
+      vizStyle = style;
+      document.getElementById("vizBarsBtn").classList.toggle("active", style === "bars");
+      document.getElementById("vizWaveBtn").classList.toggle("active", style === "wave");
+    }
+
+    // Clipboard pre-fill check & History load
     window.addEventListener("DOMContentLoaded", async () => {
       try {
         if (navigator.clipboard && navigator.clipboard.readText) {
@@ -656,6 +920,16 @@
           if (clipText && (clipText.startsWith("http://") || clipText.startsWith("https://")) && !urlInput.value) {
             urlInput.value = clipText;
           }
+        }
+      } catch(e) {}
+
+      // Fetch recent history
+      try {
+        const r = await fetch("/history");
+        if (r.ok) {
+          const list = await r.json();
+          recentBroadcasts = list;
+          renderRecentBroadcasts();
         }
       } catch(e) {}
     });
@@ -674,7 +948,7 @@
         const response = await fetch("/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: url })
+          body: JSON.stringify({ url: url, persona: selectedPersona })
         });
 
         let data = {};
@@ -690,12 +964,22 @@
           throw new Error(data.detail || `Server returned status ${response.status}`);
         }
 
-
         // Handle Success
         stopLoadingCycle();
         setStatus("is-live", "On air");
+        
+        if (playerMeta) {
+          playerMeta.textContent = `LIVE BRIEFING • ${data.persona ? data.persona.toUpperCase() : 'STANDARD'}`;
+        }
+        if (downloadBtn) {
+          downloadBtn.href = data.audio_url;
+        }
+
         renderTranscript(data.script);
         setupAudio(data.audio_url);
+
+        // Update Recent List
+        addRecentBroadcast(data);
 
       } catch (err) {
         stopLoadingCycle();
@@ -704,6 +988,48 @@
       } finally {
         setLoadingState(false);
       }
+    }
+
+    // Recent Broadcast Tape Reel Handlers
+    function addRecentBroadcast(item) {
+      recentBroadcasts.unshift(item);
+      if (recentBroadcasts.length > 5) recentBroadcasts.pop();
+      renderRecentBroadcasts();
+    }
+
+    function renderRecentBroadcasts() {
+      if (!recentBroadcasts || recentBroadcasts.length === 0) {
+        recentCard.style.display = "none";
+        return;
+      }
+
+      recentCard.style.display = "flex";
+      recentList.innerHTML = "";
+
+      recentBroadcasts.forEach((item, index) => {
+        const chip = document.createElement("div");
+        chip.className = "tape-chip";
+        const title = item.title || item.url;
+        chip.innerHTML = `
+          <div class="tape-info">
+            <span class="tape-title">${escapeHtml(title)}</span>
+            <span class="tape-sub">Persona: ${escapeHtml(item.persona || 'standard')}</span>
+          </div>
+          <span class="tape-play-icon">▶ Play Tape</span>
+        `;
+        chip.onclick = () => {
+          urlInput.value = item.url;
+          renderTranscript(item.script);
+          setupAudio(item.audio_url);
+          setStatus("is-live", "On air");
+          if (downloadBtn) downloadBtn.href = item.audio_url;
+        };
+        recentList.appendChild(chip);
+      });
+    }
+
+    function escapeHtml(str) {
+      return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
     // Status Pill Management
@@ -861,7 +1187,7 @@
       return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
     }
 
-    // Web Audio Canvas Visualizer
+    // Web Audio Canvas Visualizer (Supports Bars & Wave Modes)
     function startVisualizer() {
       if (animFrameId) cancelAnimationFrame(animFrameId);
 
@@ -874,7 +1200,6 @@
         if (analyserNode && !audioPlayer.paused) {
           analyserNode.getByteFrequencyData(dataArray);
         } else {
-          // Flatten data array smoothly when paused
           for (let i = 0; i < dataArray.length; i++) {
             dataArray[i] = Math.max(0, dataArray[i] - 4);
           }
@@ -885,35 +1210,60 @@
 
         ctx.clearRect(0, 0, width, height);
 
-        const barCount = 48;
-        const gap = 4 * window.devicePixelRatio;
-        const barWidth = (width - (barCount - 1) * gap) / barCount;
-        const centerY = height / 2;
-
-        for (let i = 0; i < barCount; i++) {
-          const sampleIndex = Math.floor((i / barCount) * (bufferLength / 1.5));
-          const val = dataArray[sampleIndex] || 0;
-          const amplitude = (val / 255);
-          
-          // Height calculation with minimum resting bar height
-          let barHeight = amplitude * (height * 0.75);
-          if (barHeight < 4 * window.devicePixelRatio) {
-            barHeight = 4 * window.devicePixelRatio;
-          }
-
-          const x = i * (barWidth + gap);
-          const y = centerY - (barHeight / 2);
-
-          // Render in Accent Color (#D97757) with rounded caps
-          ctx.fillStyle = "#D97757";
+        if (vizStyle === "wave") {
+          // Smooth Oscilloscope Curve
           ctx.beginPath();
-          ctx.roundRect(x, y, barWidth, barHeight, 3 * window.devicePixelRatio);
-          ctx.fill();
+          ctx.lineWidth = 3 * window.devicePixelRatio;
+          ctx.strokeStyle = "#D97757";
+
+          const sliceWidth = width / bufferLength;
+          let x = 0;
+
+          for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = (v * height) / 2;
+
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+            x += sliceWidth;
+          }
+          ctx.lineTo(width, height / 2);
+          ctx.stroke();
+
+        } else {
+          // Classic Frequency Bars
+          const barCount = 48;
+          const gap = 4 * window.devicePixelRatio;
+          const barWidth = (width - (barCount - 1) * gap) / barCount;
+          const centerY = height / 2;
+
+          for (let i = 0; i < barCount; i++) {
+            const sampleIndex = Math.floor((i / barCount) * (bufferLength / 1.5));
+            const val = dataArray[sampleIndex] || 0;
+            const amplitude = (val / 255);
+            
+            let barHeight = amplitude * (height * 0.75);
+            if (barHeight < 4 * window.devicePixelRatio) {
+              barHeight = 4 * window.devicePixelRatio;
+            }
+
+            const x = i * (barWidth + gap);
+            const y = centerY - (barHeight / 2);
+
+            ctx.fillStyle = "#D97757";
+            ctx.beginPath();
+            ctx.roundRect(x, y, barWidth, barHeight, 3 * window.devicePixelRatio);
+            ctx.fill();
+          }
         }
       }
 
       draw();
     }
   </script>
+
 </body>
 </html>
