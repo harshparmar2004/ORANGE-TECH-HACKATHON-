@@ -403,11 +403,100 @@
       transform: translateX(4px);
     }
 
-    .chapter-play-icon {
-      font-size: 12px;
-      color: var(--accent);
-      font-weight: 700;
+    /* Quick Sample Links */
+    .sample-presets {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
     }
+
+    .sample-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .sample-pill {
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 10px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .sample-pill:hover {
+      background: var(--accent-tint);
+      border-color: var(--accent);
+      color: var(--accent-deep);
+      transform: translateY(-1px);
+    }
+
+    /* EQ & Speed Selectors */
+    .ctrl-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .eq-selector {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .eq-btn {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 4px 10px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .eq-btn:hover {
+      color: var(--text);
+    }
+
+    .eq-btn.active {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .transcript-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Interactive Sentence Highlighting */
+    .sentence-node {
+      transition: background-color 0.25s ease, color 0.25s ease;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    .sentence-node.active-sentence {
+      background: var(--accent-tint-strong);
+      color: var(--accent-deep);
+      font-weight: 600;
+    }
+
 
 
     /* Sidebar Recent List */
@@ -1092,8 +1181,19 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
             </button>
           </form>
+
+          <!-- One-Click Quick Sample Links -->
+          <div class="sample-presets">
+            <span class="sample-label">Try instant link:</span>
+            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Artificial_intelligence')">🚀 AI Tech</button>
+            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Quantum_computing')">🧬 Quantum</button>
+            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Black_hole')">🪐 Black Holes</button>
+            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Solar_energy')">💡 Solar Energy</button>
+          </div>
+
           <p class="form-hint">Context.dev scrapes the page • Groq writes the script • Fish Audio voices the broadcast</p>
         </section>
+
 
         <!-- Error State Panel -->
         <div id="errorPanel" class="error-panel" role="alert">
@@ -1121,11 +1221,20 @@
               <input type="range" id="progressSlider" class="progress-slider" min="0" max="100" value="0" step="0.1" oninput="handleSeek(this.value)">
               <div class="control-row">
                 <div class="speed-selector">
+                  <span class="ctrl-label">Speed:</span>
                   <button class="speed-btn active" onclick="setPlaybackSpeed(1.0, this)">1x</button>
                   <button class="speed-btn" onclick="setPlaybackSpeed(1.25, this)">1.25x</button>
                   <button class="speed-btn" onclick="setPlaybackSpeed(1.5, this)">1.5x</button>
                   <button class="speed-btn" onclick="setPlaybackSpeed(2.0, this)">2x</button>
                 </div>
+
+                <div class="eq-selector">
+                  <span class="ctrl-label">Studio EQ:</span>
+                  <button class="eq-btn active" onclick="setStudioEQ('flat', this)">Flat</button>
+                  <button class="eq-btn" onclick="setStudioEQ('warm', this)">Warm 🎙️</button>
+                  <button class="eq-btn" onclick="setStudioEQ('vocal', this)">Vocal 📢</button>
+                </div>
+
                 <a id="downloadBtn" class="btn-download" download="on_air_briefing.mp3" target="_blank">Download MP3</a>
                 <div id="timeDisplay" class="time-display">0:00 / 0:00</div>
               </div>
@@ -1146,10 +1255,14 @@
         <section id="transcriptCard" class="transcript-card">
           <div class="transcript-header">
             <span class="transcript-title">Broadcast Transcript</span>
-            <button class="btn-secondary" onclick="copyTranscript()">Copy script</button>
+            <div class="transcript-actions">
+              <button class="btn-secondary" onclick="downloadTranscriptTxt()">Download .txt</button>
+              <button class="btn-secondary" onclick="copyTranscript()">Copy script</button>
+            </div>
           </div>
           <div id="transcriptBody" class="transcript-body"></div>
         </section>
+
 
 
       </main>
@@ -1482,15 +1595,69 @@
       transcriptCard.classList.remove("is-visible");
     }
 
-    // Transcript UI
+    // Quick Sample Loader
+    function loadSample(url) {
+      urlInput.value = url;
+      document.getElementById("briefingForm").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+    }
+
+    // Studio Equalizer Processor Node
+    let eqBiquadNode = null;
+
+    function setStudioEQ(preset, el) {
+      document.querySelectorAll(".eq-btn").forEach(btn => btn.classList.remove("active"));
+      if (el) el.classList.add("active");
+
+      if (eqBiquadNode) {
+        if (preset === "warm") {
+          eqBiquadNode.type = "lowshelf";
+          eqBiquadNode.frequency.value = 250;
+          eqBiquadNode.gain.value = 6; // +6dB Bass Boost
+        } else if (preset === "vocal") {
+          eqBiquadNode.type = "peaking";
+          eqBiquadNode.frequency.value = 2500;
+          eqBiquadNode.gain.value = 5; // +5dB Vocal Boost
+        } else {
+          eqBiquadNode.type = "peaking";
+          eqBiquadNode.frequency.value = 1000;
+          eqBiquadNode.gain.value = 0; // Flat
+        }
+      }
+    }
+
+    // Download Transcript (.txt)
+    function downloadTranscriptTxt() {
+      const rawText = transcriptBody.innerText || transcriptBody.textContent;
+      if (!rawText) return;
+      const blob = new Blob([rawText], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "on_air_transcript.txt";
+      link.click();
+    }
+
+    // Transcript UI with Sentence Karaoke Nodes
+    let currentSentences = [];
+
     function renderTranscript(text) {
-      transcriptBody.textContent = text;
+      transcriptBody.innerHTML = "";
+      currentSentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+      
+      currentSentences.forEach((sentence, idx) => {
+        const span = document.createElement("span");
+        span.className = "sentence-node";
+        span.id = `sent-${idx}`;
+        span.textContent = sentence + " ";
+        transcriptBody.appendChild(span);
+      });
+
       transcriptCard.classList.add("is-visible");
     }
 
     function copyTranscript() {
-      if (transcriptBody.textContent) {
-        navigator.clipboard.writeText(transcriptBody.textContent);
+      const text = transcriptBody.innerText || transcriptBody.textContent;
+      if (text) {
+        navigator.clipboard.writeText(text);
         const btn = event.target;
         const orig = btn.textContent;
         btn.textContent = "Copied!";
@@ -1504,16 +1671,22 @@
       playerCard.classList.add("is-visible");
       resizeCanvas();
 
-      // Lazy load AudioContext on user action
+      // Lazy load AudioContext & EQ Biquad Filter Node on user action
       if (!audioCtx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContextClass();
         analyserNode = audioCtx.createAnalyser();
         analyserNode.fftSize = 128;
 
+        eqBiquadNode = audioCtx.createBiquadFilter();
+        eqBiquadNode.type = "peaking";
+        eqBiquadNode.frequency.value = 1000;
+        eqBiquadNode.gain.value = 0;
+
         try {
           sourceNode = audioCtx.createMediaElementSource(audioPlayer);
-          sourceNode.connect(analyserNode);
+          sourceNode.connect(eqBiquadNode);
+          eqBiquadNode.connect(analyserNode);
           analyserNode.connect(audioCtx.destination);
         } catch (e) {
           console.log("Web Audio node connection fallback", e);
@@ -1534,6 +1707,7 @@
         startVisualizer();
       });
     }
+
 
     // Audio Transport Controls
     function togglePlayPause() {
@@ -1564,16 +1738,34 @@
 
     audioPlayer.addEventListener("timeupdate", () => {
       if (audioPlayer.duration) {
-        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        progressSlider.value = progress;
+        const progressRatio = audioPlayer.currentTime / audioPlayer.duration;
+        progressSlider.value = progressRatio * 100;
         timeDisplay.textContent = `${formatTime(audioPlayer.currentTime)} / ${formatTime(audioPlayer.duration)}`;
+
+        // Highlight active spoken sentence node
+        if (currentSentences && currentSentences.length > 0) {
+          const activeIndex = Math.min(
+            Math.floor(progressRatio * currentSentences.length),
+            currentSentences.length - 1
+          );
+
+          document.querySelectorAll(".sentence-node").forEach((span, idx) => {
+            if (idx === activeIndex) {
+              span.classList.add("active-sentence");
+            } else {
+              span.classList.remove("active-sentence");
+            }
+          });
+        }
       }
     });
 
     audioPlayer.addEventListener("ended", () => {
       updatePlayPauseUI(false);
       progressSlider.value = 0;
+      document.querySelectorAll(".sentence-node").forEach(span => span.classList.remove("active-sentence"));
     });
+
 
     function handleSeek(percent) {
       if (audioPlayer.duration) {
