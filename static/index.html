@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>On Air — Voice Web Briefing</title>
+  <title>On Air — Voice Web Briefing Studio</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,10 +24,11 @@
       --accent-tint-strong: rgba(217, 119, 87, 0.18);
       --border: rgba(43, 36, 32, 0.08);
       --border-strong: rgba(43, 36, 32, 0.16);
-      --radius-sm: 6px;
-      --radius-md: 12px;
-      --radius-lg: 20px;
-      --shadow-subtle: 0 4px 20px rgba(43, 36, 32, 0.04);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --shadow-subtle: 0 4px 24px rgba(43, 36, 32, 0.04);
+      --shadow-card: 0 8px 30px rgba(43, 36, 32, 0.06);
       --font-display: 'Source Serif 4', Georgia, serif;
       --font-body: 'Inter', system-ui, -apple-system, sans-serif;
       --font-mono: 'IBM Plex Mono', monospace;
@@ -44,12 +45,11 @@
       background-color: var(--bg);
       color: var(--text);
       font-family: var(--font-body);
-      font-size: 16px;
+      font-size: 15px;
       line-height: 1.6;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
       position: relative;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
@@ -67,36 +67,55 @@
       opacity: 0.035;
     }
 
-    /* Layout Containers */
-    .app-header {
+    /* App Layout Grid */
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
       width: 100%;
-      max-width: 900px;
-      padding: 32px 24px 16px;
+    }
+
+    /* Top Navbar */
+    .top-navbar {
+      height: 64px;
+      padding: 0 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(43, 36, 32, 0.02);
     }
 
-    .brand-group {
+    .nav-brand {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .brand-icon {
-      width: 32px;
-      height: 32px;
+    .nav-logo {
+      width: 36px;
+      height: 36px;
       background: var(--accent);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--surface);
-      font-weight: 700;
-      font-size: 16px;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(217, 119, 87, 0.3);
     }
 
-    .brand-title {
+    .nav-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-title {
       font-family: var(--font-display);
       font-size: 22px;
       font-weight: 700;
@@ -104,19 +123,36 @@
       letter-spacing: -0.02em;
     }
 
+    .nav-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 3px 8px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
     .status-pill {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 14px;
-      background: var(--surface);
+      padding: 7px 16px;
+      background: var(--surface-raised);
       border: 1px solid var(--border);
       border-radius: 100px;
       font-family: var(--font-mono);
       font-size: 13px;
       font-weight: 500;
       color: var(--text);
-      box-shadow: var(--shadow-subtle);
       transition: all 0.25s ease;
     }
 
@@ -154,22 +190,213 @@
       to { opacity: 1; }
     }
 
-    .main-content {
+    /* Main Workspace Layout (Left Sidebar + Right Window) */
+    .workspace-body {
+      display: flex;
+      flex: 1;
       width: 100%;
-      max-width: 900px;
-      padding: 16px 24px 64px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    /* Left Sidebar */
+    .sidebar {
+      width: 320px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 28px 20px;
       display: flex;
       flex-direction: column;
       gap: 28px;
+      flex-shrink: 0;
     }
 
-    /* Console Card */
+    .sidebar-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+      padding: 0 4px;
+    }
+
+    /* Persona Menu */
+    .persona-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .persona-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+    }
+
+    .persona-item:hover {
+      border-color: var(--accent-tint-strong);
+      background: var(--surface);
+      transform: translateX(3px);
+    }
+
+    .persona-item.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(217, 119, 87, 0.25);
+    }
+
+    .persona-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .persona-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .persona-title {
+      font-weight: 600;
+      font-size: 14px;
+
+    }
+
+    .persona-item.active .persona-title {
+      color: #FFFFFF;
+    }
+
+    .persona-desc {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .persona-item.active .persona-desc {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    /* Engine Viz Menu */
+    .viz-menu {
+      display: flex;
+      gap: 8px;
+    }
+
+    .viz-menu-item {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 10px 8px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .viz-menu-item:hover {
+      background: var(--border);
+    }
+
+    .viz-menu-item.active {
+      background: var(--accent-tint);
+      border-color: var(--accent);
+      color: var(--accent-deep);
+      font-weight: 600;
+    }
+
+    /* Sidebar Recent List */
+    .sidebar-recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tape-chip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tape-chip:hover {
+      border-color: var(--accent);
+      background: var(--surface);
+    }
+
+    .tape-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    .tape-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tape-sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .tape-play-icon {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .empty-history {
+      font-size: 13px;
+      color: var(--muted);
+      font-style: italic;
+      padding: 4px;
+    }
+
+    /* Right Main Studio Window */
+    .main-workspace {
+      flex: 1;
+      padding: 32px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      min-width: 0;
+    }
+
+    /* Console Studio Card */
     .console-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: 40px;
-      box-shadow: var(--shadow-subtle);
+      box-shadow: var(--shadow-card);
     }
 
     .console-eyebrow {
@@ -196,14 +423,14 @@
     .input-form {
       display: flex;
       gap: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .url-input {
       flex: 1;
       font-family: var(--font-mono);
       font-size: 15px;
-      padding: 14px 18px;
+      padding: 16px 20px;
       background: var(--surface-raised);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
@@ -225,7 +452,7 @@
       font-family: var(--font-body);
       font-size: 15px;
       font-weight: 600;
-      padding: 14px 28px;
+      padding: 16px 32px;
       background: var(--accent);
       color: #FFFFFF;
       border: none;
@@ -234,9 +461,10 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
       white-space: nowrap;
       transition: background-color 0.2s ease, transform 0.1s ease;
+      box-shadow: 0 4px 16px rgba(217, 119, 87, 0.3);
     }
 
     .btn-primary:hover:not(:disabled) {
@@ -293,26 +521,41 @@
       color: var(--text);
     }
 
-    /* Waveform & Player Console */
+    /* Waveform & Player Console Card */
     .player-card {
       display: none;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: 32px;
-      box-shadow: var(--shadow-subtle);
+      box-shadow: var(--shadow-card);
     }
 
     .player-card.is-visible {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
       animation: fadeIn 0.4s ease;
+    }
+
+    .waveform-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .player-meta {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      font-weight: 600;
+      text-transform: uppercase;
     }
 
     .waveform-container {
       width: 100%;
-      height: 120px;
+      height: 140px;
       background: var(--surface-raised);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
@@ -329,12 +572,12 @@
     .player-controls {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 18px;
     }
 
     .play-btn {
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
       background: var(--accent);
       border: none;
@@ -345,6 +588,7 @@
       justify-content: center;
       transition: background-color 0.2s ease, transform 0.1s ease;
       flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(217, 119, 87, 0.35);
     }
 
     .play-btn:hover {
@@ -355,14 +599,9 @@
       transform: scale(0.95);
     }
 
-    .play-btn:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
-
     .play-btn svg {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       fill: currentColor;
     }
 
@@ -370,7 +609,7 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     .progress-slider {
@@ -398,11 +637,64 @@
       transform: scale(1.2);
     }
 
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .speed-selector {
+      display: flex;
+      gap: 4px;
+    }
+
+    .speed-btn {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 4px 10px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .speed-btn:hover {
+      color: var(--text);
+    }
+
+    .speed-btn.active {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .btn-download {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 5px 14px;
+      border: 1px solid var(--accent-tint-strong);
+      border-radius: var(--radius-sm);
+      background: var(--accent-tint);
+      transition: all 0.2s ease;
+    }
+
+    .btn-download:hover {
+      background: var(--accent);
+      color: #FFFFFF;
+    }
+
     .time-display {
       font-family: var(--font-mono);
       font-size: 13px;
       color: var(--muted);
-      align-self: flex-end;
     }
 
     /* Transcript Card */
@@ -412,7 +704,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: 36px;
-      box-shadow: var(--shadow-subtle);
+      box-shadow: var(--shadow-card);
     }
 
     .transcript-card.is-visible {
@@ -446,7 +738,7 @@
       background: var(--surface-raised);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 6px 12px;
+      padding: 6px 14px;
       border-radius: var(--radius-sm);
       cursor: pointer;
       transition: all 0.2s ease;
@@ -456,212 +748,75 @@
       background: var(--border);
     }
 
-    /* Persona Selector */
-    .persona-selector {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-
-    .persona-label {
-      font-family: var(--font-mono);
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 500;
-    }
-
-    .persona-btn {
-      font-family: var(--font-body);
-      font-size: 13px;
-      font-weight: 500;
-      padding: 7px 14px;
-      background: var(--surface-raised);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
+    .transcript-body {
+      font-family: var(--font-display);
+      font-size: 18px;
+      line-height: 1.7;
       color: var(--text);
-      cursor: pointer;
-      transition: all 0.2s ease;
+      white-space: pre-wrap;
     }
 
-    .persona-btn:hover {
-      background: var(--border);
-    }
-
-    .persona-btn.active {
-      background: var(--accent);
-      color: #FFFFFF;
-      border-color: var(--accent);
-      font-weight: 600;
-    }
-
-    /* Waveform Header & Controls */
-    .waveform-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .player-meta {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      letter-spacing: 0.06em;
-      color: var(--accent);
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .viz-toggle {
-      display: flex;
-      gap: 4px;
-      background: var(--surface-raised);
-      padding: 3px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-    }
-
-    .viz-btn {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      padding: 4px 10px;
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .viz-btn.active {
+    /* Bottom Website Footer */
+    .app-footer {
       background: var(--surface);
-      color: var(--text);
-      font-weight: 600;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border-top: 1px solid var(--border);
+      padding: 24px 40px;
+      margin-top: auto;
     }
 
-    .control-row {
+    .footer-content {
+      max-width: 1440px;
+      margin: 0 auto;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .footer-brand {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    .footer-copy {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .footer-links {
+      display: flex;
       align-items: center;
       gap: 16px;
-      margin-top: 4px;
-      flex-wrap: wrap;
     }
 
-    .speed-selector {
-      display: flex;
-      gap: 4px;
-    }
-
-    .speed-btn {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      padding: 4px 8px;
-      background: var(--surface-raised);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .speed-btn:hover {
-      color: var(--text);
-    }
-
-    .speed-btn.active {
-      background: var(--accent);
-      color: #FFFFFF;
-      border-color: var(--accent);
-      font-weight: 600;
-    }
-
-    .btn-download {
-      font-family: var(--font-body);
+    .footer-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       font-size: 13px;
       font-weight: 500;
-      color: var(--accent);
+      color: var(--text);
       text-decoration: none;
-      padding: 4px 12px;
-      border: 1px solid var(--accent-tint-strong);
-      border-radius: var(--radius-sm);
-      background: var(--accent-tint);
-      transition: all 0.2s ease;
-    }
-
-    .btn-download:hover {
-      background: var(--accent);
-      color: #FFFFFF;
-    }
-
-    /* Recent Broadcast Tapes Reel */
-    .recent-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 28px 32px;
-      box-shadow: var(--shadow-subtle);
-    }
-
-    .recent-header {
-      margin-bottom: 16px;
-    }
-
-    .recent-title {
-      font-family: var(--font-mono);
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .recent-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .tape-chip {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
+      padding: 6px 12px;
       background: var(--surface-raised);
       border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      cursor: pointer;
+      border-radius: var(--radius-sm);
       transition: all 0.2s ease;
     }
 
-    .tape-chip:hover {
+    .footer-link:hover {
       border-color: var(--accent);
-      transform: translateX(4px);
-    }
-
-    .tape-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .tape-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .tape-sub {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .tape-play-icon {
       color: var(--accent);
-      font-weight: 700;
-      font-size: 14px;
+      transform: translateY(-2px);
     }
 
     /* Animations */
@@ -670,15 +825,26 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-
-    /* Responsive */
-    @media (max-width: 640px) {
-      .app-header {
-        padding: 20px 16px 8px;
+    /* Responsive Design */
+    @media (max-width: 960px) {
+      .workspace-body {
+        flex-direction: column;
       }
 
-      .main-content {
-        padding: 12px 16px 40px;
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .main-workspace {
+        padding: 24px 20px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .top-navbar {
+        padding: 0 16px;
       }
 
       .console-card {
@@ -701,17 +867,8 @@
         padding: 24px 20px;
       }
 
-      .transcript-body {
-        font-size: 16px;
-      }
-    }
-
-    /* Reduced Motion */
-    @media (prefers-reduced-motion: reduce) {
-      *, ::before, ::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+      .app-footer {
+        padding: 20px;
       }
     }
   </style>
@@ -727,115 +884,179 @@
     <rect width="100%" height="100%" filter="url(#noiseFilter)"/>
   </svg>
 
-  <!-- Header -->
-  <header class="app-header">
-    <div class="brand-group">
-      <div class="brand-icon">📻</div>
-      <h1 class="brand-title">On Air</h1>
-    </div>
+  <div class="app-container">
 
-    <div id="statusPill" class="status-pill">
-      <span class="status-dot"></span>
-      <span id="statusText">Ready</span>
-    </div>
-  </header>
-
-  <!-- Main Console -->
-  <main class="main-content">
-
-    <!-- URL Input Console Card -->
-    <section class="console-card">
-      <div class="console-eyebrow">Voice Web Briefing</div>
-      <h2 class="console-headline">Paste a link. Hear it back as a broadcast.</h2>
-
-      <!-- Persona Dial Selector -->
-      <div class="persona-selector">
-        <span class="persona-label">Select Persona:</span>
-        <button type="button" class="persona-btn active" data-persona="standard" onclick="selectPersona('standard', this)">🎙️ Anchor</button>
-        <button type="button" class="persona-btn" data-persona="upbeat" onclick="selectPersona('upbeat', this)">⚡ Tech Pulse</button>
-        <button type="button" class="persona-btn" data-persona="calm" onclick="selectPersona('calm', this)">🧘 Deep Dive</button>
-        <button type="button" class="persona-btn" data-persona="vintage" onclick="selectPersona('vintage', this)">📻 Vintage Radio</button>
-      </div>
-
-      <form id="briefingForm" class="input-form" onsubmit="handleFormSubmit(event)">
-        <input 
-          type="text" 
-          id="urlInput" 
-          class="url-input" 
-          placeholder="https://en.wikipedia.org/wiki/Artificial_intelligence" 
-          required 
-          autocomplete="off"
-          autofocus
-        />
-        <button type="submit" id="submitBtn" class="btn-primary">
-          <span>Go live</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-        </button>
-      </form>
-      <p class="form-hint">Context.dev scrapes the page • Groq writes the script • Fish Audio voices the broadcast</p>
-    </section>
-
-    <!-- Error State Panel -->
-    <div id="errorPanel" class="error-panel" role="alert">
-      <div class="error-title">Signal lost</div>
-      <div id="errorMessage" class="error-message">Couldn't put this page on air. Try another URL.</div>
-    </div>
-
-    <!-- Audio Player & Waveform Console -->
-    <section id="playerCard" class="player-card">
-      <div class="waveform-header">
-        <span id="playerMeta" class="player-meta">LIVE BROADCAST</span>
-        <div class="viz-toggle">
-          <button class="viz-btn active" id="vizBarsBtn" onclick="setVizStyle('bars')">Bars</button>
-          <button class="viz-btn" id="vizWaveBtn" onclick="setVizStyle('wave')">Wave</button>
+    <!-- Top Navbar -->
+    <header class="top-navbar">
+      <div class="nav-brand">
+        <div class="nav-logo">📻</div>
+        <div class="nav-title-group">
+          <span class="nav-title">On Air</span>
+          <span class="nav-badge">Voice Web Briefing Studio</span>
         </div>
       </div>
 
-      <div class="waveform-container">
-        <canvas id="waveformCanvas"></canvas>
+      <div class="nav-actions">
+        <div id="statusPill" class="status-pill">
+          <span class="status-dot"></span>
+          <span id="statusText">Ready</span>
+        </div>
       </div>
+    </header>
 
-      <div class="player-controls">
-        <button id="playPauseBtn" class="play-btn" aria-label="Play audio" onclick="togglePlayPause()">
-          <svg id="playIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-          <svg id="pauseIcon" viewBox="0 0 24 24" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-        </button>
+    <!-- Main Workspace Layout (Left Sidebar + Right Studio Window) -->
+    <div class="workspace-body">
 
-        <div class="progress-bar-wrapper">
-          <input type="range" id="progressSlider" class="progress-slider" min="0" max="100" value="0" step="0.1" oninput="handleSeek(this.value)">
-          <div class="control-row">
-            <div class="speed-selector">
-              <button class="speed-btn active" onclick="setPlaybackSpeed(1.0, this)">1x</button>
-              <button class="speed-btn" onclick="setPlaybackSpeed(1.25, this)">1.25x</button>
-              <button class="speed-btn" onclick="setPlaybackSpeed(1.5, this)">1.5x</button>
-              <button class="speed-btn" onclick="setPlaybackSpeed(2.0, this)">2x</button>
-            </div>
-            <a id="downloadBtn" class="btn-download" download="on_air_briefing.mp3" target="_blank">Download MP3</a>
-            <div id="timeDisplay" class="time-display">0:00 / 0:00</div>
+      <!-- Left Sidebar Features Console -->
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Broadcast Persona</div>
+          <div class="persona-menu">
+            <button class="persona-item active" data-persona="standard" onclick="selectPersona('standard', this)">
+              <span class="persona-icon">🎙️</span>
+              <div class="persona-text">
+                <span class="persona-title">News Anchor</span>
+                <span class="persona-desc">Authoritative & balanced</span>
+              </div>
+            </button>
+            <button class="persona-item" data-persona="upbeat" onclick="selectPersona('upbeat', this)">
+              <span class="persona-icon">⚡</span>
+              <div class="persona-text">
+                <span class="persona-title">Tech Pulse</span>
+                <span class="persona-desc">Energetic & upbeat</span>
+              </div>
+            </button>
+            <button class="persona-item" data-persona="calm" onclick="selectPersona('calm', this)">
+              <span class="persona-icon">🧘</span>
+              <div class="persona-text">
+                <span class="persona-title">Deep Dive</span>
+                <span class="persona-desc">Calm & analytical</span>
+              </div>
+            </button>
+            <button class="persona-item" data-persona="vintage" onclick="selectPersona('vintage', this)">
+              <span class="persona-icon">📻</span>
+              <div class="persona-text">
+                <span class="persona-title">Vintage Radio</span>
+                <span class="persona-desc">1940s newsreel style</span>
+              </div>
+            </button>
           </div>
         </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Visualizer Engine</div>
+          <div class="viz-menu">
+            <button id="vizBarsBtn" class="viz-menu-item active" onclick="setVizStyle('bars')">Bars</button>
+            <button id="vizWaveBtn" class="viz-menu-item" onclick="setVizStyle('wave')">Wave</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Recent Broadcast Tapes</div>
+          <div id="recentList" class="sidebar-recent-list">
+            <span class="empty-history">No recent tapes recorded</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Main Studio Window -->
+      <main class="main-workspace">
+
+        <!-- URL Input Studio Card -->
+        <section class="console-card">
+          <div class="console-eyebrow">Voice Web Intelligence</div>
+          <h2 class="console-headline">Paste a link. Hear it back as a broadcast.</h2>
+
+          <form id="briefingForm" class="input-form" onsubmit="handleFormSubmit(event)">
+            <input 
+              type="text" 
+              id="urlInput" 
+              class="url-input" 
+              placeholder="https://en.wikipedia.org/wiki/Artificial_intelligence" 
+              required 
+              autocomplete="off"
+              autofocus
+            />
+            <button type="submit" id="submitBtn" class="btn-primary">
+              <span>Go live</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+          </form>
+          <p class="form-hint">Context.dev scrapes the page • Groq writes the script • Fish Audio voices the broadcast</p>
+        </section>
+
+        <!-- Error State Panel -->
+        <div id="errorPanel" class="error-panel" role="alert">
+          <div class="error-title">Signal lost</div>
+          <div id="errorMessage" class="error-message">Couldn't put this page on air. Try another URL.</div>
+        </div>
+
+        <!-- Audio Player & Waveform Console -->
+        <section id="playerCard" class="player-card">
+          <div class="waveform-header">
+            <span id="playerMeta" class="player-meta">LIVE BRIEFING • STANDARD</span>
+          </div>
+
+          <div class="waveform-container">
+            <canvas id="waveformCanvas"></canvas>
+          </div>
+
+          <div class="player-controls">
+            <button id="playPauseBtn" class="play-btn" aria-label="Play audio" onclick="togglePlayPause()">
+              <svg id="playIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <svg id="pauseIcon" viewBox="0 0 24 24" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            </button>
+
+            <div class="progress-bar-wrapper">
+              <input type="range" id="progressSlider" class="progress-slider" min="0" max="100" value="0" step="0.1" oninput="handleSeek(this.value)">
+              <div class="control-row">
+                <div class="speed-selector">
+                  <button class="speed-btn active" onclick="setPlaybackSpeed(1.0, this)">1x</button>
+                  <button class="speed-btn" onclick="setPlaybackSpeed(1.25, this)">1.25x</button>
+                  <button class="speed-btn" onclick="setPlaybackSpeed(1.5, this)">1.5x</button>
+                  <button class="speed-btn" onclick="setPlaybackSpeed(2.0, this)">2x</button>
+                </div>
+                <a id="downloadBtn" class="btn-download" download="on_air_briefing.mp3" target="_blank">Download MP3</a>
+                <div id="timeDisplay" class="time-display">0:00 / 0:00</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Transcript Console -->
+        <section id="transcriptCard" class="transcript-card">
+          <div class="transcript-header">
+            <span class="transcript-title">Broadcast Transcript</span>
+            <button class="btn-secondary" onclick="copyTranscript()">Copy script</button>
+          </div>
+          <div id="transcriptBody" class="transcript-body"></div>
+        </section>
+
+      </main>
+
+    </div>
+
+    <!-- Bottom Website Footer -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <div class="footer-left">
+          <span class="footer-brand">On Air Studio</span>
+          <span class="footer-copy">Built for Context.dev × Fish Audio Hackathon Problem Statement 2</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/harshparmar2004/ORANGE-TECH-HACKATHON-" target="_blank" class="footer-link" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            <span>GitHub</span>
+          </a>
+          <a href="https://www.linkedin.com/in/harshparmar" target="_blank" class="footer-link" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+            <span>LinkedIn</span>
+          </a>
+        </div>
       </div>
-    </section>
+    </footer>
 
-    <!-- Transcript Console -->
-    <section id="transcriptCard" class="transcript-card">
-      <div class="transcript-header">
-        <span class="transcript-title">Broadcast Transcript</span>
-        <button class="btn-secondary" onclick="copyTranscript()">Copy script</button>
-      </div>
-      <div id="transcriptBody" class="transcript-body"></div>
-    </section>
-
-    <!-- Recent Broadcast Tapes Reel -->
-    <section id="recentCard" class="recent-card" style="display:none;">
-      <div class="recent-header">
-        <span class="recent-title">📼 Recent Broadcast Tapes</span>
-      </div>
-      <div id="recentList" class="recent-list"></div>
-    </section>
-
-
-  </main>
+  </div>
 
   <!-- Audio Element -->
   <audio id="audioPlayer" crossorigin="anonymous"></audio>
@@ -870,7 +1091,6 @@
     const downloadBtn = document.getElementById("downloadBtn");
     const transcriptCard = document.getElementById("transcriptCard");
     const transcriptBody = document.getElementById("transcriptBody");
-    const recentCard = document.getElementById("recentCard");
     const recentList = document.getElementById("recentList");
     const audioPlayer = document.getElementById("audioPlayer");
     const playPauseBtn = document.getElementById("playPauseBtn");
@@ -894,7 +1114,7 @@
     // Persona Selection
     function selectPersona(persona, el) {
       selectedPersona = persona;
-      document.querySelectorAll(".persona-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".persona-item").forEach(item => item.classList.remove("active"));
       el.classList.add("active");
     }
 
@@ -969,7 +1189,7 @@
         setStatus("is-live", "On air");
         
         if (playerMeta) {
-          playerMeta.textContent = `LIVE BRIEFING • ${data.persona ? data.persona.toUpperCase() : 'STANDARD'}`;
+          playerMeta.textContent = `LIVE BRIEFING • ${(data.persona || selectedPersona).toUpperCase()}`;
         }
         if (downloadBtn) {
           downloadBtn.href = data.audio_url;
@@ -999,29 +1219,29 @@
 
     function renderRecentBroadcasts() {
       if (!recentBroadcasts || recentBroadcasts.length === 0) {
-        recentCard.style.display = "none";
+        recentList.innerHTML = '<span class="empty-history">No recent tapes recorded</span>';
         return;
       }
 
-      recentCard.style.display = "flex";
       recentList.innerHTML = "";
 
-      recentBroadcasts.forEach((item, index) => {
+      recentBroadcasts.forEach((item) => {
         const chip = document.createElement("div");
         chip.className = "tape-chip";
         const title = item.title || item.url;
         chip.innerHTML = `
           <div class="tape-info">
             <span class="tape-title">${escapeHtml(title)}</span>
-            <span class="tape-sub">Persona: ${escapeHtml(item.persona || 'standard')}</span>
+            <span class="tape-sub">${escapeHtml(item.persona || 'standard')}</span>
           </div>
-          <span class="tape-play-icon">▶ Play Tape</span>
+          <span class="tape-play-icon">▶</span>
         `;
         chip.onclick = () => {
           urlInput.value = item.url;
           renderTranscript(item.script);
           setupAudio(item.audio_url);
           setStatus("is-live", "On air");
+          if (playerMeta) playerMeta.textContent = `REPLAY TAPE • ${(item.persona || 'standard').toUpperCase()}`;
           if (downloadBtn) downloadBtn.href = item.audio_url;
         };
         recentList.appendChild(chip);
