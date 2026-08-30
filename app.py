@@ -175,7 +175,15 @@ def generate():
             return jsonify({"detail": "Context.dev error: No content could be extracted from this URL."}), 502
 
         page_title = ctx_json.get("metadata", {}).get("title") or url.split("//")[-1].split("/")[0]
-        truncated_md = markdown_content[:3000]
+
+        # Dynamic scraping depth based on selected briefing duration
+        scrape_depths = {
+            "30": 3000,
+            "60": 6000,
+            "90": 12000  # Maximum scraped depth for 90s deep dive
+        }
+        max_chars = scrape_depths.get(length, 6000)
+        truncated_md = markdown_content[:max_chars]
 
         # Language instructions
         lang_names = {
@@ -187,13 +195,13 @@ def generate():
         }
         target_lang = lang_names.get(language, "English")
 
-        # Length word constraints
-        length_words = {
-            "30": "under 35 words total (approx 30 seconds)",
-            "60": "under 65 words total (approx 60 seconds)",
-            "90": "under 100 words total (approx 90 seconds)"
+        # Length word constraints & pointwise count
+        length_configs = {
+            "30": ("under 35 words total (approx 30 seconds)", 3),
+            "60": ("under 65 words total (approx 60 seconds)", 5),
+            "90": ("under 110 words total (approx 90 seconds)", 7)
         }
-        target_length = length_words.get(length, "under 65 words total (approx 60 seconds)")
+        target_length, num_points = length_configs.get(length, ("under 65 words total (approx 60 seconds)", 5))
 
         # Persona style prompts
         persona_instructions = {
@@ -204,16 +212,17 @@ def generate():
         }
         selected_persona_prompt = persona_instructions.get(persona, persona_instructions["standard"])
 
-        # Stage 2: Groq LLM Condensation
+        # Stage 2: Groq LLM Condensation & Pointwise Breakdown Extraction
         prompt = (
             f"{selected_persona_prompt}\n"
-            f"Language Constraint: Write the briefing in {target_lang}.\n"
-            f"Length Constraint: Keep the script {target_length}.\n"
-            "STRICT FORMAT:\n"
-            "Provide the output in two sections separated by '---CHAPTERS---':\n"
-            "Section 1: The spoken broadcast script (no markdown syntax, no headers, plain spoken sentences).\n"
-            "Section 2: Exactly 3 short chapter takeaway headlines formatted as JSON array: [\"Headline 1\", \"Headline 2\", \"Headline 3\"]\n\n"
-            f"Web Page Content:\n{truncated_md}"
+            f"Language Constraint: Write in {target_lang}.\n"
+            f"Length Constraint: Keep spoken script {target_length}.\n"
+            "STRICT OUTPUT FORMAT:\n"
+            "Provide the response in two sections separated by '---POINTWISE---':\n"
+            "Section 1: Spoken broadcast script (plain spoken English/target language, no markdown syntax).\n"
+            f"Section 2: Exactly {num_points} key pointwise breakdown sections extracted from scraped page as JSON array:\n"
+            "[{\"title\": \"Point Title\", \"details\": \"Detailed scraped insight line\"}]\n\n"
+            f"Scraped Web Content (Depth: {max_chars} chars):\n{truncated_md}"
         )
 
         groq_models = ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b", "groq/compound-mini"]
@@ -233,7 +242,7 @@ def generate():
                         "messages": [{"role": "user", "content": prompt}],
                         "temperature": 0.5
                     },
-                    timeout=15
+                    timeout=20
                 )
                 if groq_resp.status_code == 200:
                     raw_llm_output = groq_resp.json()["choices"][0]["message"]["content"].strip()
@@ -249,34 +258,62 @@ def generate():
         if not raw_llm_output:
             return jsonify({"detail": f"Groq LLM error: {groq_err_msg}"}), 502
 
-        # Parse script and chapters
-        if "---CHAPTERS---" in raw_llm_output:
+        # Parse script and pointwise data
+        if "---POINTWISE---" in raw_llm_output:
+            parts = raw_llm_output.split("---POINTWISE---")
+            script = parts[0].strip()
+            pointwise_raw = parts[1].strip()
+        elif "---CHAPTERS---" in raw_llm_output:
             parts = raw_llm_output.split("---CHAPTERS---")
             script = parts[0].strip()
-            chapters_raw = parts[1].strip()
+            pointwise_raw = parts[1].strip()
         else:
             script = raw_llm_output
-            chapters_raw = ""
+            pointwise_raw = ""
 
-        # Chapter fallback timestamps based on length
+        # Parse pointwise items & compute chapter timestamps
         dur = 30 if length == "30" else (90 if length == "90" else 60)
-        ch_times = [0, int(dur * 0.35), int(dur * 0.70)]
+        pointwise_list = []
         chapters = []
 
         try:
-            ch_list = json.loads(chapters_raw)
-            for idx, item in enumerate(ch_list[:3]):
-                t_sec = ch_times[idx] if idx < len(ch_times) else idx * 15
+            parsed_points = json.loads(pointwise_raw)
+            step_sec = dur / max(len(parsed_points), 1)
+
+            for idx, item in enumerate(parsed_points):
+                t_sec = int(idx * step_sec)
                 m = t_sec // 60
                 s = t_sec % 60
                 ts_str = f"{m}:{s:02d}"
-                chapters.append({"time": t_sec, "label": f"{ts_str} - {item}"})
+
+                p_title = item.get("title") or f"Point {idx+1}"
+                p_details = item.get("details") or item.get("title") or ""
+
+                pointwise_list.append({
+                    "step": idx + 1,
+                    "time": t_sec,
+                    "timestamp": ts_str,
+                    "title": p_title,
+                    "details": p_details
+                })
+
+                chapters.append({
+                    "time": t_sec,
+                    "label": f"{ts_str} - {p_title}"
+                })
         except Exception:
-            chapters = [
-                {"time": 0, "label": "0:00 - Introduction & Hook"},
-                {"time": ch_times[1], "label": f"{ch_times[1]//60}:{ch_times[1]%60:02d} - Key Insight"},
-                {"time": ch_times[2], "label": f"{ch_times[2]//60}:{ch_times[2]%60:02d} - Conclusion"}
+            # Fallback pointwise items
+            pointwise_list = [
+                {"step": 1, "time": 0, "timestamp": "0:00", "title": "Overview & Context", "details": "Primary introduction extracted from the top section of the page."},
+                {"step": 2, "time": int(dur * 0.4), "timestamp": f"{int(dur*0.4)//60}:{int(dur*0.4)%60:02d}", "title": "Core Technical Findings", "details": "Key analytical data points and technical findings."},
+                {"step": 3, "time": int(dur * 0.8), "timestamp": f"{int(dur*0.8)//60}:{int(dur*0.8)%60:02d}", "title": "Conclusions & Implications", "details": "Final summary takeaways and strategic conclusions."}
             ]
+            chapters = [
+                {"time": 0, "label": "0:00 - Overview & Context"},
+                {"time": int(dur * 0.4), "label": f"{int(dur*0.4)//60}:{int(dur*0.4)%60:02d} - Core Technical Findings"},
+                {"time": int(dur * 0.8), "label": f"{int(dur*0.8)//60}:{int(dur*0.8)%60:02d} - Conclusions & Implications"}
+            ]
+
 
         # Stage 3: Fast Fish Audio TTS
         fish_models = ["s2.1-pro-free", "s2-pro", "s2.1-pro"]
@@ -325,8 +362,10 @@ def generate():
             "length": length,
             "script": script,
             "chapters": chapters,
+            "pointwise_data": pointwise_list,
             "audio_url": audio_data_url
         }
+
 
         RECENT_BROADCASTS.insert(0, res_payload)
         if len(RECENT_BROADCASTS) > 5:

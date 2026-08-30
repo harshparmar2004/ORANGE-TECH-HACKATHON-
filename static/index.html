@@ -464,6 +464,116 @@
       transform: translateX(4px);
     }
 
+    /* Pointwise Scraped Breakdown Card */
+    .pointwise-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .pointwise-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pointwise-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .pointwise-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      background: var(--accent-tint);
+      border: 1px solid var(--accent-tint-strong);
+      border-radius: 100px;
+      color: var(--accent-deep);
+      font-weight: 600;
+    }
+
+    .pointwise-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pointwise-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pointwise-item:hover {
+      border-color: var(--accent);
+      background: var(--surface);
+      transform: translateX(3px);
+    }
+
+    .pointwise-step {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #FFFFFF;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pointwise-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .pointwise-item-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pointwise-ts {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent-deep);
+      background: var(--accent-tint);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .pointwise-item-details {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+
     /* Quick Sample Links */
     .sample-presets {
       display: flex;
@@ -1315,6 +1425,16 @@
           <div id="chaptersList" class="chapters-list"></div>
         </section>
 
+        <!-- Pointwise Scraped Breakdown Card -->
+        <section id="pointwiseCard" class="pointwise-card" style="display:none;">
+          <div class="pointwise-header">
+            <span class="pointwise-title">📑 Pointwise Scraped Breakdown & Key Sections</span>
+            <span id="pointwiseDepthBadge" class="pointwise-badge">Scraped Depth: 6,000 Chars</span>
+          </div>
+          <div id="pointwiseList" class="pointwise-grid"></div>
+        </section>
+
+
         <!-- Transcript Console -->
         <section id="transcriptCard" class="transcript-card">
           <div class="transcript-header">
@@ -1526,6 +1646,7 @@
         }
 
         renderChapters(data.chapters);
+        renderPointwiseData(data.pointwise_data, data.length || selectedLength);
         renderTranscript(data.script);
         setupAudio(data.audio_url);
 
@@ -1539,6 +1660,47 @@
       } finally {
         setLoadingState(false);
       }
+    }
+
+    // Render Pointwise Scraped Breakdown Cards
+    function renderPointwiseData(items, length) {
+      const pointwiseCard = document.getElementById("pointwiseCard");
+      const pointwiseList = document.getElementById("pointwiseList");
+      const pointwiseDepthBadge = document.getElementById("pointwiseDepthBadge");
+
+      if (!items || items.length === 0) {
+        if (pointwiseCard) pointwiseCard.style.display = "none";
+        return;
+      }
+
+      if (pointwiseCard) pointwiseCard.style.display = "flex";
+      if (pointwiseList) pointwiseList.innerHTML = "";
+
+      const depthText = length === "90" ? "Max Scraped Depth: 12,000 Chars" : (length === "30" ? "Scraped Depth: 3,000 Chars" : "Scraped Depth: 6,000 Chars");
+      if (pointwiseDepthBadge) pointwiseDepthBadge.textContent = depthText;
+
+      items.forEach(pt => {
+        const div = document.createElement("div");
+        div.className = "pointwise-item";
+        div.innerHTML = `
+          <div class="pointwise-step">${pt.step || '•'}</div>
+          <div class="pointwise-content">
+            <div class="pointwise-item-title">
+              <span>${escapeHtml(pt.title)}</span>
+              <span class="pointwise-ts">▶ ${escapeHtml(pt.timestamp || '0:00')}</span>
+            </div>
+            <div class="pointwise-item-details">${escapeHtml(pt.details)}</div>
+          </div>
+        `;
+        div.onclick = () => {
+          if (audioPlayer) {
+            audioPlayer.currentTime = pt.time || 0;
+            if (audioPlayer.paused) audioPlayer.play();
+            updatePlayPauseUI(true);
+          }
+        };
+        pointwiseList.appendChild(div);
+      });
     }
 
     // Render Chapters Takeaways
@@ -1573,8 +1735,11 @@
     function hidePlayerAndTranscript() {
       playerCard.classList.remove("is-visible");
       chaptersCard.style.display = "none";
+      const pointwiseCard = document.getElementById("pointwiseCard");
+      if (pointwiseCard) pointwiseCard.style.display = "none";
       transcriptCard.classList.remove("is-visible");
     }
+
 
 
     // Recent Broadcast Tape Reel Handlers
