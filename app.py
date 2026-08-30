@@ -5,8 +5,10 @@ import math
 import struct
 import base64
 import tempfile
+import json
 from flask import Flask, request, jsonify, send_from_directory
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
@@ -83,6 +85,8 @@ def generate():
         data = request.get_json(silent=True) or {}
         url = data.get("url", "").strip()
         persona = data.get("persona", "standard").strip().lower()
+        language = data.get("language", "en").strip().lower()
+        length = data.get("length", "60").strip()
 
         if not url:
             return jsonify({"detail": "URL is required."}), 400
@@ -106,24 +110,29 @@ def generate():
 
         if is_placeholder_key:
             if is_demo_request:
-                # Generate demo response for trial without API keys
                 demo_script = (
                     "Welcome to On Air Voice Web Briefing. This is a demonstration broadcast summarizing key web content. "
                     "Context dot dev retrieves clean markdown from the target URL, Groq LLM condenses it into spoken radio prose, "
                     "and Fish Audio generates natural voice synthesis. Add your production API keys to the environment file to stream live web pages."
                 )
                 audio_bytes = create_demo_wav_bytes(duration_sec=10)
-                output_path = os.path.join(STATIC_DIR, "output.mp3")
-                with open(output_path, "wb") as f:
-                    f.write(audio_bytes)
+                audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+                audio_data_url = f"data:audio/mp3;base64,{audio_b64}"
 
                 timestamp = int(time.time())
                 res_payload = {
                     "title": "On Air Broadcast Demo",
                     "url": url,
                     "persona": persona,
+                    "language": language,
+                    "length": length,
                     "script": demo_script,
-                    "audio_url": f"/static/output.mp3?t={timestamp}"
+                    "chapters": [
+                        {"time": 0, "label": "0:00 - Introduction & Hook"},
+                        {"time": 4, "label": "0:04 - Key Technology Insights"},
+                        {"time": 8, "label": "0:08 - Conclusion & Sign-off"}
+                    ],
+                    "audio_url": audio_data_url
                 }
                 RECENT_BROADCASTS.insert(0, res_payload)
                 if len(RECENT_BROADCASTS) > 5:
@@ -165,44 +174,50 @@ def generate():
         if not markdown_content:
             return jsonify({"detail": "Context.dev error: No content could be extracted from this URL."}), 502
 
-        # Extract title from metadata if available
         page_title = ctx_json.get("metadata", {}).get("title") or url.split("//")[-1].split("/")[0]
-
-        # Truncate markdown to ~3000 chars for rapid LLM processing
         truncated_md = markdown_content[:3000]
 
-        # Persona style prompts optimized for fast, punchy 50-word scripts
-        persona_instructions = {
-            "upbeat": (
-                "Persona: Tech Pulse Anchor (Upbeat & Energetic).\n"
-                "Use an emotion cue like [excited] at the start. Keep it fast-paced, punchy, under 60 words total."
-            ),
-            "calm": (
-                "Persona: Deep Dive Analyst (Calm & Thoughtful).\n"
-                "Use an emotion cue like [calm] at the start. Keep it slow, clear, reflective, under 60 words total."
-            ),
-            "vintage": (
-                "Persona: 1940s Vintage Radio Newsreel.\n"
-                "Start with 'Good evening listeners, breaking news!' Use dramatic vintage phrasing, under 60 words total."
-            ),
-            "standard": (
-                "Persona: Standard Radio News Anchor.\n"
-                "Deliver a crisp, professional, 3-sentence radio briefing, under 60 words total."
-            )
+        # Language instructions
+        lang_names = {
+            "en": "English",
+            "es": "Spanish (Español)",
+            "fr": "French (Français)",
+            "de": "German (Deutsch)",
+            "hi": "Hindi (हिंदी)"
         }
+        target_lang = lang_names.get(language, "English")
 
+        # Length word constraints
+        length_words = {
+            "30": "under 35 words total (approx 30 seconds)",
+            "60": "under 65 words total (approx 60 seconds)",
+            "90": "under 100 words total (approx 90 seconds)"
+        }
+        target_length = length_words.get(length, "under 65 words total (approx 60 seconds)")
+
+        # Persona style prompts
+        persona_instructions = {
+            "upbeat": "Persona: Tech Pulse Anchor (Upbeat & Energetic). Use fast-paced, enthusiastic phrasing.",
+            "calm": "Persona: Deep Dive Analyst (Calm & Reflective). Use slow, clear, analytical phrasing.",
+            "vintage": "Persona: 1940s Vintage Radio Newsreel. Start with dramatic radio phrasing.",
+            "standard": "Persona: Standard Radio News Anchor. Deliver a crisp, balanced news briefing."
+        }
         selected_persona_prompt = persona_instructions.get(persona, persona_instructions["standard"])
 
-        # Stage 2: Fast Groq LLM Condensation
+        # Stage 2: Groq LLM Condensation
         prompt = (
             f"{selected_persona_prompt}\n"
-            "Summarize this web page into a fast 3-sentence spoken radio briefing. "
-            "STRICT CONSTRAINTS: No markdown (no asterisks, headers, bullets). Plain spoken English under 60 words.\n\n"
+            f"Language Constraint: Write the briefing in {target_lang}.\n"
+            f"Length Constraint: Keep the script {target_length}.\n"
+            "STRICT FORMAT:\n"
+            "Provide the output in two sections separated by '---CHAPTERS---':\n"
+            "Section 1: The spoken broadcast script (no markdown syntax, no headers, plain spoken sentences).\n"
+            "Section 2: Exactly 3 short chapter takeaway headlines formatted as JSON array: [\"Headline 1\", \"Headline 2\", \"Headline 3\"]\n\n"
             f"Web Page Content:\n{truncated_md}"
         )
 
         groq_models = ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b", "groq/compound-mini"]
-        script = None
+        raw_llm_output = None
         groq_err_msg = "Unknown Groq error"
 
         for model_name in groq_models:
@@ -221,7 +236,7 @@ def generate():
                     timeout=15
                 )
                 if groq_resp.status_code == 200:
-                    script = groq_resp.json()["choices"][0]["message"]["content"].strip()
+                    raw_llm_output = groq_resp.json()["choices"][0]["message"]["content"].strip()
                     break
                 else:
                     try:
@@ -231,9 +246,37 @@ def generate():
             except requests.RequestException as e:
                 groq_err_msg = str(e)
 
-
-        if not script:
+        if not raw_llm_output:
             return jsonify({"detail": f"Groq LLM error: {groq_err_msg}"}), 502
+
+        # Parse script and chapters
+        if "---CHAPTERS---" in raw_llm_output:
+            parts = raw_llm_output.split("---CHAPTERS---")
+            script = parts[0].strip()
+            chapters_raw = parts[1].strip()
+        else:
+            script = raw_llm_output
+            chapters_raw = ""
+
+        # Chapter fallback timestamps based on length
+        dur = 30 if length == "30" else (90 if length == "90" else 60)
+        ch_times = [0, int(dur * 0.35), int(dur * 0.70)]
+        chapters = []
+
+        try:
+            ch_list = json.loads(chapters_raw)
+            for idx, item in enumerate(ch_list[:3]):
+                t_sec = ch_times[idx] if idx < len(ch_times) else idx * 15
+                m = t_sec // 60
+                s = t_sec % 60
+                ts_str = f"{m}:{s:02d}"
+                chapters.append({"time": t_sec, "label": f"{ts_str} - {item}"})
+        except Exception:
+            chapters = [
+                {"time": 0, "label": "0:00 - Introduction & Hook"},
+                {"time": ch_times[1], "label": f"{ch_times[1]//60}:{ch_times[1]%60:02d} - Key Insight"},
+                {"time": ch_times[2], "label": f"{ch_times[2]//60}:{ch_times[2]%60:02d} - Conclusion"}
+            ]
 
         # Stage 3: Fast Fish Audio TTS
         fish_models = ["s2.1-pro-free", "s2-pro", "s2.1-pro"]
@@ -270,24 +313,18 @@ def generate():
         if not fish_resp or fish_resp.status_code != 200:
             return jsonify({"detail": f"Fish Audio TTS error: {fish_err_msg}"}), 502
 
-        # Convert audio bytes directly to Base64 Data URL (100% stateless, works on read-only filesystems like /var/task)
+        # Convert audio bytes directly to Base64 Data URL (100% stateless)
         audio_b64 = base64.b64encode(fish_resp.content).decode("utf-8")
         audio_data_url = f"data:audio/mp3;base64,{audio_b64}"
-
-        # Attempt to save to /tmp or static folder if writable, ignore filesystem errors
-        try:
-            tmp_dir = tempfile.gettempdir()
-            tmp_path = os.path.join(tmp_dir, "output.mp3")
-            with open(tmp_path, "wb") as f:
-                f.write(fish_resp.content)
-        except Exception:
-            pass
 
         res_payload = {
             "title": page_title,
             "url": url,
             "persona": persona,
+            "language": language,
+            "length": length,
             "script": script,
+            "chapters": chapters,
             "audio_url": audio_data_url
         }
 
@@ -298,6 +335,7 @@ def generate():
         return jsonify(res_payload), 200
     except Exception as exc:
         return jsonify({"detail": f"Server processing error: {str(exc)}"}), 500
+
 
 
     except Exception as exc:
