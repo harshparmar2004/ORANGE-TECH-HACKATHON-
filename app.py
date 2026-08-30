@@ -165,48 +165,40 @@ def generate():
         # Extract title from metadata if available
         page_title = ctx_json.get("metadata", {}).get("title") or url.split("//")[-1].split("/")[0]
 
-        # Truncate markdown to ~8000 chars for LLM safety
-        truncated_md = markdown_content[:8000]
+        # Truncate markdown to ~3000 chars for rapid LLM processing
+        truncated_md = markdown_content[:3000]
 
-        # Persona style prompts
+        # Persona style prompts optimized for fast, punchy 50-word scripts
         persona_instructions = {
             "upbeat": (
                 "Persona: Tech Pulse Anchor (Upbeat & Energetic).\n"
-                "Use occasional emotion cues like [excited] or [energetic] at key transitions. "
-                "Keep sentences fast-paced, enthusiastic, and highly engaging for a modern tech audience."
+                "Use an emotion cue like [excited] at the start. Keep it fast-paced, punchy, under 60 words total."
             ),
             "calm": (
                 "Persona: Deep Dive Analyst (Calm & Thoughtful).\n"
-                "Use occasional emotion cues like [calm] or [soft]. "
-                "Write in a slow, clear, reflective, and deeply analytical commentary style."
+                "Use an emotion cue like [calm] at the start. Keep it slow, clear, reflective, under 60 words total."
             ),
             "vintage": (
                 "Persona: 1940s Vintage Radio Newsreel.\n"
-                "Start with 'Good evening listeners, breaking news from the wire!' "
-                "Use dramatic vintage broadcasting vocabulary and classic mid-century newsreel phrasing."
+                "Start with 'Good evening listeners, breaking news!' Use dramatic vintage phrasing, under 60 words total."
             ),
             "standard": (
                 "Persona: Standard Radio News Anchor.\n"
-                "Deliver a crisp, professional, balanced, and authoritative news briefing."
+                "Deliver a crisp, professional, 3-sentence radio briefing, under 60 words total."
             )
         }
 
         selected_persona_prompt = persona_instructions.get(persona, persona_instructions["standard"])
 
-        # Stage 2: Groq LLM Condensation
+        # Stage 2: Fast Groq LLM Condensation
         prompt = (
             f"{selected_persona_prompt}\n"
-            "Transform the following web page content into a 60 to 90 second spoken broadcast script.\n"
-            "STRICT CONSTRAINTS:\n"
-            "- Do NOT use markdown syntax (no asterisks, no headers, no bullet points).\n"
-            "- Write natural spoken sentences only.\n"
-            "- Start with a compelling broadcast opening statement.\n"
-            "- Cover 3 to 5 core insights smoothly.\n"
-            "- Conclude with a clean sign-off.\n\n"
+            "Summarize this web page into a fast 3-sentence spoken radio briefing. "
+            "STRICT CONSTRAINTS: No markdown (no asterisks, headers, bullets). Plain spoken English under 60 words.\n\n"
             f"Web Page Content:\n{truncated_md}"
         )
 
-        groq_models = ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b", "groq/compound-mini", "llama-3.1-8b-instant"]
+        groq_models = ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b", "groq/compound-mini"]
         script = None
         groq_err_msg = "Unknown Groq error"
 
@@ -221,9 +213,9 @@ def generate():
                     json={
                         "model": model_name,
                         "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.7
+                        "temperature": 0.5
                     },
-                    timeout=25
+                    timeout=15
                 )
                 if groq_resp.status_code == 200:
                     script = groq_resp.json()["choices"][0]["message"]["content"].strip()
@@ -236,10 +228,11 @@ def generate():
             except requests.RequestException as e:
                 groq_err_msg = str(e)
 
+
         if not script:
             return jsonify({"detail": f"Groq LLM error: {groq_err_msg}"}), 502
 
-        # Stage 3: Fish Audio TTS (using s2.1-pro-free with Ethan voice reference_id)
+        # Stage 3: Fast Fish Audio TTS
         fish_models = ["s2.1-pro-free", "s2-pro", "s2.1-pro"]
         fish_resp = None
         fish_err_msg = "Fish Audio error"
@@ -258,7 +251,7 @@ def generate():
                         "reference_id": "536d3a5e000945adb7038665781a4aca",
                         "format": "mp3"
                     },
-                    timeout=35
+                    timeout=20
                 )
                 if resp.status_code == 200:
                     fish_resp = resp
@@ -273,6 +266,7 @@ def generate():
 
         if not fish_resp or fish_resp.status_code != 200:
             return jsonify({"detail": f"Fish Audio TTS error: {fish_err_msg}"}), 502
+
 
         # Save audio file
         output_filename = f"output_{int(time.time())}.mp3"
