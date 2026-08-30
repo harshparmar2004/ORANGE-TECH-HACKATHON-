@@ -655,18 +655,78 @@
       gap: 8px;
     }
 
-    /* Interactive Sentence Highlighting */
-    .sentence-node {
-      transition: background-color 0.25s ease, color 0.25s ease;
-      padding: 2px 4px;
-      border-radius: 4px;
+    /* Teleprompter Broadcast Layout */
+    .teleprompter-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed var(--border-strong);
     }
 
-    .sentence-node.active-sentence {
-      background: var(--accent-tint-strong);
+    .teleprompter-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
       color: var(--accent-deep);
-      font-weight: 600;
+      background: var(--accent-tint);
+      padding: 4px 10px;
+      border-radius: 4px;
+      text-transform: uppercase;
     }
+
+    .teleprompter-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .teleprompter-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s ease;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+    }
+
+    .teleprompter-line:hover {
+      border-color: var(--accent-tint-strong);
+      background: var(--surface);
+    }
+
+    .teleprompter-line.active-line {
+      background: var(--accent-tint);
+      border-color: var(--accent);
+    }
+
+    .line-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-tint-strong);
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    .script-kw {
+      color: var(--accent-deep);
+      font-weight: 700;
+    }
+
+    .sentence-node {
+      font-family: var(--font-display);
+      font-size: 17px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
 
 
 
@@ -1894,24 +1954,42 @@
       if (sidebar) sidebar.classList.toggle("active");
     }
 
-    // Transcript UI with Sentence Karaoke Nodes & Analytics Bar
+    // Teleprompter Transcript UI with Keyword Highlighting & Sentence Tracking
     let currentSentences = [];
 
-    function renderTranscript(text) {
-      transcriptBody.innerHTML = "";
-      currentSentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-      
-      currentSentences.forEach((sentence, idx) => {
-        const span = document.createElement("span");
-        span.className = "sentence-node";
-        span.id = `sent-${idx}`;
-        span.textContent = sentence + " ";
-        transcriptBody.appendChild(span);
+    function renderTranscript(text, personaName) {
+      const persona = personaName || selectedPersona;
+      const cleanText = text.replace(/  +/g, " ").replace(/\s+([,.!?])/g, "$1").trim();
+      currentSentences = cleanText.match(/[^.!?]+[.!?]+/g) || [cleanText];
+
+      let teleprompterLines = currentSentences.map((sentence, idx) => {
+        const lineNum = (idx + 1) < 10 ? `0${idx + 1}` : `${idx + 1}`;
+        // Automatically highlight proper nouns, technical terms, and numbers
+        const enhancedSentence = sentence.replace(/(\b[A-Z][a-z0-9'-]+(?:\s+[A-Z][a-z0-9'-]+)*\b|\b\d+(?:\.\d+)?%?\b)/g, (match, p1, offset) => {
+          // Bolding key entities/numbers
+          return `<strong class="script-kw">${match}</strong>`;
+        });
+
+        return `
+          <div class="teleprompter-line" id="line-${idx}">
+            <span class="line-num">${lineNum}</span>
+            <span class="sentence-node">${enhancedSentence}</span>
+          </div>
+        `;
       });
 
+      transcriptBody.innerHTML = `
+        <div class="teleprompter-header">
+          <span class="teleprompter-badge">🎙️ ${persona.toUpperCase()} TELEPROMPTER SCRIPT</span>
+        </div>
+        <div class="teleprompter-content">
+          ${teleprompterLines.join("")}
+        </div>
+      `;
+
       // Calculate script analytics metrics
-      const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
-      const readSec = Math.round((words / 150) * 60); // 150 words per min spoken pace
+      const words = cleanText.split(/\s+/).filter(w => w.length > 0).length;
+      const readSec = Math.round((words / 150) * 60);
       
       const statWordCount = document.getElementById("statWordCount");
       const statReadTime = document.getElementById("statReadTime");
@@ -1919,11 +1997,10 @@
 
       if (statWordCount) statWordCount.textContent = `💬 ${words} words`;
       if (statReadTime) statReadTime.textContent = `⏱️ ~${readSec}s listen`;
-      if (statPacing) statPacing.textContent = `🎙️ ${selectedPersona.toUpperCase()} • Spoken Radio`;
+      if (statPacing) statPacing.textContent = `🎙️ ${persona.toUpperCase()} • Teleprompter`;
 
       transcriptCard.classList.add("is-visible");
     }
-
 
     function copyTranscript() {
       const text = transcriptBody.innerText || transcriptBody.textContent;
@@ -1979,7 +2056,6 @@
       });
     }
 
-
     // Audio Transport Controls
     function togglePlayPause() {
       if (audioCtx && audioCtx.state === "suspended") {
@@ -2013,18 +2089,18 @@
         progressSlider.value = progressRatio * 100;
         timeDisplay.textContent = `${formatTime(audioPlayer.currentTime)} / ${formatTime(audioPlayer.duration)}`;
 
-        // Highlight active spoken sentence node
+        // Highlight active teleprompter line
         if (currentSentences && currentSentences.length > 0) {
           const activeIndex = Math.min(
             Math.floor(progressRatio * currentSentences.length),
             currentSentences.length - 1
           );
 
-          document.querySelectorAll(".sentence-node").forEach((span, idx) => {
+          document.querySelectorAll(".teleprompter-line").forEach((line, idx) => {
             if (idx === activeIndex) {
-              span.classList.add("active-sentence");
+              line.classList.add("active-line");
             } else {
-              span.classList.remove("active-sentence");
+              line.classList.remove("active-line");
             }
           });
         }
@@ -2034,8 +2110,9 @@
     audioPlayer.addEventListener("ended", () => {
       updatePlayPauseUI(false);
       progressSlider.value = 0;
-      document.querySelectorAll(".sentence-node").forEach(span => span.classList.remove("active-sentence"));
+      document.querySelectorAll(".teleprompter-line").forEach(line => line.classList.remove("active-line"));
     });
+
 
 
     function handleSeek(percent) {
