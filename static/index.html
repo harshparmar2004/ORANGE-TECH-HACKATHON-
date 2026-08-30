@@ -613,6 +613,15 @@
       transform: translateY(-1px);
     }
 
+    .sample-pill.active {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(217, 119, 87, 0.3);
+    }
+
+
     /* EQ & Speed Selectors */
     .ctrl-label {
       font-family: var(--font-mono);
@@ -1416,14 +1425,17 @@
             </button>
           </form>
 
-          <!-- One-Click Quick Sample Links -->
+          <!-- One-Click Instant Niche Scraper Links -->
           <div class="sample-presets">
-            <span class="sample-label">Try instant link:</span>
-            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Artificial_intelligence')">🚀 AI Tech</button>
-            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Quantum_computing')">🧬 Quantum</button>
-            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Black_hole')">🪐 Black Holes</button>
-            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Solar_energy')">💡 Solar Energy</button>
+            <span class="sample-label">Instant Scrape Niche:</span>
+            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Artificial_intelligence', this)">🚀 AI Tech</button>
+            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Quantum_computing', this)">🧬 Quantum</button>
+            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Black_hole', this)">🪐 Black Holes</button>
+            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Solar_energy', this)">💡 Solar Energy</button>
+            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Formula_One', this)">🏎️ Formula 1</button>
+            <button type="button" class="sample-pill" onclick="loadSample('https://en.wikipedia.org/wiki/Neuroscience', this)">🧠 Neuroscience</button>
           </div>
+
 
           <p class="form-hint">Context.dev scrapes the page • Groq writes the script • Fish Audio voices the broadcast</p>
         </section>
@@ -1894,11 +1906,20 @@
       transcriptCard.classList.remove("is-visible");
     }
 
-    // Quick Sample Loader
-    function loadSample(url) {
+    // Quick Sample Niche Scraper Loader (Triggers Immediate Live Scraping)
+    function loadSample(url, el) {
       urlInput.value = url;
-      document.getElementById("briefingForm").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+      document.querySelectorAll(".sample-pill").forEach(p => p.classList.remove("active"));
+      if (el) el.classList.add("active");
+
+      const form = document.getElementById("briefingForm");
+      if (form.requestSubmit) {
+        form.requestSubmit();
+      } else {
+        handleFormSubmit(new Event("submit"));
+      }
     }
+
 
     // Studio Equalizer Processor Node
     let eqBiquadNode = null;
